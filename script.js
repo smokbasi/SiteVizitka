@@ -12,6 +12,34 @@
 
   document.getElementById("year").textContent = new Date().getFullYear();
 
+  // ── Scroll reveal ──
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          const delay = entry.target.dataset.delay || 0;
+          setTimeout(() => entry.target.classList.add("visible"), delay);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+
+  document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+
+  // ── Hero parallax ──
+  const heroPhoto = document.querySelector(".hero__photo");
+  if (heroPhoto && window.matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY;
+      if (y < window.innerHeight) {
+        heroPhoto.style.transform = `translateY(${y * 0.28}px)`;
+      }
+    }, { passive: true });
+  }
+
+  // ── Modal ──
   const modal = document.getElementById("beta-modal");
   const form = document.getElementById("beta-form");
   const formError = document.getElementById("form-error");
@@ -68,7 +96,6 @@
     ].join("\n");
 
     const url = `${telegramUrl}?text=${encodeURIComponent(text)}`;
-
     window.open(url, "_blank", "noopener,noreferrer");
     form.reset();
     closeModal();
