@@ -1,0 +1,3 @@
+const TELEGRAM_USERNAME = "Basifilder";
+const PHONE_DISPLAY = "8 952 245-30-31";
+const PHONE_TEL = "+79522453031";

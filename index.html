@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Никита Милашевич — руководитель производства ВСПОМНИ, создатель DoubleMark для маркировки Честный Знак">
+  <meta name="theme-color" content="#1a2419">
+  <title>Никита Милашевич</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero" id="top">
+    <div class="hero__photo-wrap">
+      <img
+        class="hero__photo"
+        src="assets/photo.jpg"
+        alt="Никита Милашевич"
+        width="480"
+        height="640"
+        fetchpriority="high"
+      >
+      <div class="hero__overlay"></div>
+    </div>
+    <div class="hero__content">
+      <h1 class="hero__name">Никита Милашевич</h1>
+      <p class="hero__role">Руководитель производства · Разработчик ПО</p>
+      <div class="hero__actions">
+        <div class="telegram-block">
+          <a class="btn btn--primary" href="https://t.me/Basifilder" id="btn-telegram" target="_blank" rel="noopener noreferrer">
+            <span class="btn__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            </span>
+            Написать в Telegram
+          </a>
+          <a class="contact-phone" href="tel:+79522453031">8 952 245-30-31</a>
+        </div>
+        <button class="btn btn--secondary" type="button" id="btn-beta">
+          Оставить заявку на бету
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="about">
+      <h2 class="section__title">Обо мне</h2>
+      <div class="section__body prose">
+        <p>Мне 24 года, и с 20 лет я управляю производством — и с каждым годом это становится только интереснее. Начинал в косметике и продукции для полости рта: выстраивал процессы, держал качество, учился думать системно.</p>
+        <p>Сейчас я руководитель производства бренда <strong>ВСПОМНИ</strong> — парфюмерии и аромадиффузоров. Это особенный продукт: аромат живёт в памяти, он ассоциативен и эмоционален. Именно это делает работу с ним нестандартной — здесь недостаточно просто следить за нормами, нужно чувствовать продукт.</p>
+        <p>С недавнего времени я также разработчик программного обеспечения и автоматизаций для бизнеса. Это не случайное увлечение — логичное продолжение: я видел, сколько времени производство теряет на ручные операции, и начал писать инструменты, которые это исправляют.</p>
+      </div>
+    </section>
+
+    <section class="section section--accent" id="doublemark">
+      <div class="badge">Стартап</div>
+      <h2 class="section__title">DoubleMark</h2>
+      <div class="section__body prose">
+        <p><strong>DoubleMark</strong> — SaaS-решение для дублирования кодов маркировки Честный Знак.</p>
+        <p>Работая на производстве, я столкнулся с этой проблемой лично: коды теряются, повреждаются, процесс восстановления — болезненный и непрозрачный. Я написал инструмент, который это решает. Просто, надёжно, без лишних шагов.</p>
+        <p>Сейчас DoubleMark на стадии <em>бета-тестирования</em>. Ищу производителей, готовых протестировать программу и поделиться обратной связью. На этом этапе это важнее оплаты.</p>
+        <p class="callout">Если вы производитель и работаете с маркировкой — давайте поговорим.</p>
+      </div>
+      <div class="section__actions">
+        <div class="telegram-block">
+          <a class="btn btn--primary btn--block" href="https://t.me/Basifilder" id="btn-telegram-2" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
+          <a class="contact-phone contact-phone--center" href="tel:+79522453031">8 952 245-30-31</a>
+        </div>
+        <button class="btn btn--secondary btn--block" type="button" id="btn-beta-2">Оставить заявку на бету</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© <span id="year"></span> Никита Милашевич</p>
+  </footer>
+
+  <div class="modal" id="beta-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__sheet" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <button class="modal__close" type="button" aria-label="Закрыть" data-close-modal>&times;</button>
+      <h2 class="modal__title" id="modal-title">Заявка на бета-тест</h2>
+      <p class="modal__subtitle">DoubleMark — оставьте контакты, и я свяжусь с вами</p>
+      <form class="form" id="beta-form" novalidate>
+        <label class="field">
+          <span class="field__label">Имя</span>
+          <input class="field__input" type="text" name="name" required autocomplete="name" placeholder="Как к вам обращаться">
+        </label>
+        <label class="field">
+          <span class="field__label">Компания</span>
+          <input class="field__input" type="text" name="company" required autocomplete="organization" placeholder="Название производства">
+        </label>
+        <label class="field">
+          <span class="field__label">Telegram-ник или Email</span>
+          <input class="field__input" type="text" name="contact" required autocomplete="email" placeholder="@username или email@company.ru">
+        </label>
+        <p class="form__error" id="form-error" hidden>Заполните все поля</p>
+        <button class="btn btn--primary btn--block" type="submit">Отправить заявку</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
