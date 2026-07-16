@@ -1,0 +1,3937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор планограммы мезонинов</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --text: #1a1a2e;
+      --muted: #5a6270;
+      --panel: #fff;
+      --accent: #2563eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: 0.65rem 1rem;
+      background: var(--panel);
+      border-bottom: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 0.35rem;
+    }
+    .back-link:hover { color: var(--accent); }
+    h1 { font-size: 1.1rem; font-weight: 600; }
+    .subtitle { color: var(--muted); font-size: 0.8rem; }
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      min-height: 0;
+    }
+    @media (max-width: 800px) {
+      .main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    }
+    .viewport {
+      position: relative;
+      overflow: hidden;
+      background: #dde3ea;
+      cursor: grab;
+    }
+    .viewport.panning { cursor: grabbing; }
+    .viewport svg { display: block; width: 100%; height: 100%; }
+    .panel {
+      background: var(--panel);
+      border-left: 1px solid #e5e7eb;
+      padding: 0.85rem;
+      font-size: 0.82rem;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .panel h2 {
+      font-size: 0.88rem;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+    button, label.chk {
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.4rem 0.55rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #f8fafc;
+      cursor: pointer;
+    }
+    button:hover { background: #e2e8f0; }
+    button.primary { background: var(--accent); color: #fff; border-color: #1d4ed8; }
+    button.primary:hover { background: #1d4ed8; }
+    button.orange { background: #ea580c; color: #fff; border-color: #c2410c; }
+    button.orange:hover { background: #c2410c; }
+    button.stone { background: #78716c; color: #fff; border-color: #57534e; }
+    button.stone:hover { background: #57534e; }
+    button.teal { background: #14b8a6; color: #fff; border-color: #0d9488; }
+    button.teal:hover { background: #0d9488; }
+    button.danger { color: #b91c1c; border-color: #fca5a5; }
+    .table-add {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.35rem 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .table-add label { display: flex; flex-direction: column; gap: 0.15rem; }
+    .table-add input {
+      width: 4.2rem;
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.35rem 0.4rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    .object-stats { margin-top: 0.35rem; line-height: 1.45; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:disabled:hover { background: #f8fafc; }
+    label.chk { display: flex; align-items: center; gap: 0.35rem; margin: 0.35rem 0; }
+    .stats {
+      margin-top: 0.75rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid #e5e7eb;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .stats strong { color: var(--text); }
+    .pallet-block {
+      margin-top: 0.75rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid #e5e7eb;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .pallet-block h3 {
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-bottom: 0.45rem;
+    }
+    .pallet-block strong { color: var(--text); }
+    .pallet-tiers {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.78rem;
+    }
+    .pallet-tiers select {
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.35rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #f8fafc;
+    }
+    .pallet-total {
+      margin-top: 0.35rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .hint {
+      margin-top: 0.65rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .zone-edit-block.hidden { display: none; }
+    .zone-edit-block h3 {
+      font-size: 0.88rem;
+      margin: 0.75rem 0 0.45rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid #e5e7eb;
+      color: var(--text);
+    }
+    .zone-label-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .zone-label-input input {
+      font: inherit;
+      font-size: 0.82rem;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      color: var(--text);
+    }
+    .zone-color-row {
+      margin-bottom: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .zone-color-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.35rem;
+    }
+    .zone-color-row input[type="color"] {
+      width: 2.2rem;
+      height: 1.6rem;
+      padding: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      cursor: pointer;
+      background: transparent;
+    }
+    .color-presets { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .color-presets button {
+      width: 1.4rem;
+      height: 1.4rem;
+      padding: 0;
+      border-radius: 4px;
+      border: 2px solid transparent;
+    }
+    .color-presets button.active { border-color: #1e293b; box-shadow: 0 0 0 1px #fff; }
+    .color-presets button:hover { transform: scale(1.08); }
+    .print-zone-edit {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      color: #92400e;
+    }
+    .print-zone-edit.hidden { display: none; }
+    .print-zone-edit input[type="text"] {
+      width: 7rem;
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.35rem;
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+    }
+    .print-zone-edit input[type="color"] {
+      width: 1.8rem;
+      height: 1.4rem;
+      padding: 0;
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .legend { margin-top: 0.5rem; }
+    .legend div { display: flex; align-items: center; gap: 0.4rem; margin: 0.25rem 0; }
+    .sw { width: 22px; height: 14px; border-radius: 2px; border: 1px solid #334155; }
+    .toolbar, .print-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .print-toolbar {
+      padding: 0.45rem 0.55rem;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+    }
+    .print-toolbar.hidden { display: none; }
+    .print-toolbar .sep { color: #92400e; margin: 0 0.15rem; }
+    .text-size-ctrl {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .text-size-ctrl span.val {
+      min-width: 11rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .text-orient-ctrl {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .text-orient-ctrl span.val {
+      min-width: 5.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .text-orient-block {
+      margin: 0.35rem 0 0.5rem;
+    }
+    .text-orient-block .btn-row {
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .text-orient-block .orient-label {
+      flex: 1;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    body.print-mode .panel { display: none; }
+    body.print-mode .main { grid-template-columns: 1fr; }
+    body.print-mode .viewport { cursor: default; }
+    body.print-mode .viewport.panning { cursor: grabbing; }
+    body.print-mode.space-pan .viewport { cursor: grab; }
+    .view-ctrl {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .view-ctrl .val {
+      min-width: 3.2rem;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .print-view-hint {
+      flex: 1 1 100%;
+      font-size: 0.72rem;
+      color: #92400e;
+      line-height: 1.35;
+    }
+    body.print-mode .section, body.print-mode .gp-zone { cursor: crosshair; }
+    body.print-mode.dim-tool .section, body.print-mode.dim-tool .gp-zone { cursor: crosshair; }
+    body.print-mode .zones,
+    body.print-mode .zones text,
+    body.print-mode .section text,
+    body.print-mode .section line,
+    body.print-mode #room-dims,
+    body.print-mode #room-dims text { pointer-events: none; }
+    body.print-mode .section rect,
+    body.print-mode .gp-zone rect,
+    body.print-mode .print-hit { pointer-events: all; }
+    body.print-mode .section.print-target-sel rect,
+    body.print-mode .gp-zone.print-target-sel rect {
+      stroke: #2563eb !important;
+      stroke-width: 3 !important;
+    }
+    body.print-mode .section.print-dim-pick rect,
+    body.print-mode .gp-zone.print-dim-pick rect {
+      stroke: #2563eb !important;
+      stroke-width: 2.5 !important;
+      stroke-dasharray: 6 4;
+    }
+    body.print-mode #manual-dims { pointer-events: all; }
+    body.print-mode.dim-tool #manual-dims,
+    body.print-mode.dim-tool .manual-dim { pointer-events: none; }
+    .manual-dim { pointer-events: all; cursor: pointer; }
+    .manual-dim .dim-label { pointer-events: all; cursor: pointer; }
+    .manual-dim line.dim-hit {
+      stroke: transparent;
+      stroke-width: 14;
+      pointer-events: stroke;
+    }
+    .manual-dim.selected line.dim-visible { stroke: #dc2626; stroke-width: 2; }
+    .manual-dim.print-target-sel line.dim-visible { stroke: #2563eb; stroke-width: 2.2; }
+    .manual-dim.print-target-sel .dim-label rect {
+      stroke: #2563eb !important;
+      stroke-width: 1.5;
+    }
+    .obj-text-wrap {
+      pointer-events: none;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    .obj-text-screen { pointer-events: none; }
+    .obj-text-print { display: none; pointer-events: none; }
+    .text-color-ctrl {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .text-color-ctrl .sel-count {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 8rem;
+    }
+    .dim-hint {
+      font-size: 0.75rem;
+      color: #92400e;
+      margin-left: 0.25rem;
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      html { height: auto; overflow: visible; }
+      body {
+        height: auto;
+        overflow: visible;
+        display: block;
+        background: #fff;
+      }
+      header, .panel, .toolbar, .print-toolbar { display: none !important; }
+      .main { display: block; min-height: 0; height: auto; }
+      .viewport {
+        overflow: visible;
+        background: #fff;
+        height: auto;
+        min-height: 0;
+        display: block;
+        text-align: center;
+      }
+      .viewport svg {
+        display: inline-block;
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+      }
+      .section.selected rect, .gp-zone.selected rect { stroke: #1e293b !important; stroke-width: 2 !important; }
+      .group-outline, .zone-handles, .snap-guides { display: none !important; }
+      .obj-text-screen, foreignObject { display: none !important; }
+      .obj-text-print { display: block !important; }
+      .obj-text-print text, .dim-label text, .section text, .gp-zone text, #room-dims text {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .section rect, .gp-zone rect, .aisle rect {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back-link" href="/">← К панели</a>
+    <h1>Редактор планограммы мезонинов</h1>
+    <p class="subtitle">24,9 м → · 10,3 м ↓ · проход 1,5 м (горизонтально, y = 7,1…8,6 м)</p>
+    <div class="toolbar" id="editToolbar">
+      <button type="button" id="saveFile">Сохранить в файл</button>
+      <button type="button" id="openFile">Открыть файл</button>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+      <button type="button" id="togglePrint">Режим печати</button>
+    </div>
+    <div class="print-toolbar hidden" id="printToolbar">
+      <button type="button" id="addDim">+ Размер</button>
+      <button type="button" class="danger" id="deleteDim" disabled title="Удалить выбранную размерную линию">Удалить размер</button>
+      <span class="sep">|</span>
+      <span class="text-size-ctrl">
+        Текст:
+        <button type="button" id="textSizeDown" title="Уменьшить">−</button>
+        <span class="val" id="textSizeLabel">1,0×</span>
+        <button type="button" id="textSizeUp" title="Увеличить">+</button>
+      </span>
+      <span class="text-orient-ctrl">
+        <span class="val" id="textOrientLabel">Текст: гориз.</span>
+        <button type="button" id="textOrientH" title="Горизонтальный текст">Гориз.</button>
+        <button type="button" id="textOrientVL" title="Вертикальный текст влево">Верт. ←</button>
+        <button type="button" id="textOrientVR" title="Вертикальный текст вправо">Верт. →</button>
+        <button type="button" id="textOrientToggle" title="Переключить ориентацию">Текст ↔</button>
+      </span>
+      <span class="sep">|</span>
+      <span class="text-color-ctrl">
+        <span class="sel-count" id="printTextSelCount">Выбрано для текста: 0</span>
+        <button type="button" id="textColorBlack" disabled title="Чёрный текст на выбранных">Чёрный текст</button>
+        <button type="button" id="textColorReset" disabled title="Сбросить цвет текста">По умолчанию</button>
+      </span>
+      <span class="sep">|</span>
+      <span class="view-ctrl">
+        Вид:
+        <button type="button" id="printZoomOut" title="Отдалить">−</button>
+        <span class="val" id="printZoomLabel">100%</span>
+        <button type="button" id="printZoomIn" title="Приблизить">+</button>
+        <button type="button" id="printViewReset" title="Вписать схему в окно">Сброс вида</button>
+      </span>
+      <span class="sep">|</span>
+      <span class="print-zone-edit hidden" id="printZoneEditBlock">
+        <span>Зона:</span>
+        <input type="text" id="printZoneLabelInput" maxlength="48" placeholder="Название">
+        <span>Цвет:</span>
+        <input type="color" id="printZoneColorPicker" value="#94a3b8">
+        <span class="color-presets" id="printZoneColorPresets"></span>
+      </span>
+      <span class="sep print-zone-sep hidden" id="printZoneEditSep">|</span>
+      <button type="button" class="primary" id="doPrint">Печать…</button>
+      <button type="button" id="exitPrint">Выход</button>
+      <span class="dim-hint" id="dimHint"></span>
+      <span class="print-view-hint" id="printViewHint">Колёсико — масштаб · перетаскивание по фону, средняя кнопка или Space+ЛКМ — сдвиг · при печати: альбомная ориентация, масштаб % в диалоге Chrome</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="viewport" id="viewport">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="dim-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#2563eb"/>
+          </marker>
+          <marker id="dim-arrow-snap" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/>
+          </marker>
+        </defs>
+        <g id="world"></g>
+      </svg>
+    </div>
+
+    <aside class="panel">
+      <h2>Добавить объект</h2>
+      <div class="btn-row">
+        <button type="button" class="primary" id="add27">+ Секция 2,7</button>
+        <button type="button" class="orange" id="add18">+ Секция 1,8</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="stone" id="addShelf">+ Стеллаж 60×100</button>
+      </div>
+      <div class="table-add">
+        <label>Ширина, м <input type="number" id="tableW" min="0.2" max="10" step="0.05" value="1.2"></label>
+        <label>Глубина, м <input type="number" id="tableH" min="0.2" max="10" step="0.05" value="0.8"></label>
+        <button type="button" class="teal" id="addTable">+ Стол</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="addGp" style="background:#7c3aed;color:#fff;border-color:#6d28d9">+ Зона ГП</button>
+        <button type="button" id="addBrew" class="orange">+ Зона варки</button>
+        <button type="button" id="addCustom" class="stone">+ Зона</button>
+      </div>
+      <div class="zone-edit-block hidden" id="zoneEditBlock">
+        <h3>Произвольная зона</h3>
+        <label class="zone-label-input">Название:
+          <input type="text" id="zoneLabelInput" maxlength="48" placeholder="Название зоны">
+        </label>
+        <div class="zone-color-row">
+          <label>Цвет: <input type="color" id="zoneColorPicker" value="#94a3b8"></label>
+          <div class="color-presets" id="zoneColorPresets"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="rotate">↻ Повернуть 90°</button>
+        <button type="button" class="danger" id="deleteSection" disabled>Удалить</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="linkAdjacent" style="background:#7c3aed;color:#fff;border-color:#6d28d9">Сцепить примыкающие</button>
+        <button type="button" id="linkSelected" style="background:#d97706;color:#fff;border-color:#b45309">Сцепить выделенное</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="ungroup" style="background:#a78bfa;color:#fff;border-color:#8b5cf6">Расцепить</button>
+      </div>
+      <p class="object-stats" id="selectionInfo">Выделено: <strong>0</strong></p>
+      <div class="text-orient-block" id="editTextOrientBlock">
+        <div class="btn-row">
+          <span class="orient-label" id="editTextOrientLabel">Текст: гориз.</span>
+          <button type="button" id="editTextOrientH" disabled title="Горизонтальный текст">Гориз.</button>
+          <button type="button" id="editTextOrientVL" disabled title="Вертикальный текст влево">←</button>
+          <button type="button" id="editTextOrientVR" disabled title="Вертикальный текст вправо">→</button>
+          <button type="button" id="editTextOrientToggle" disabled title="Переключить ориентацию">↔</button>
+        </div>
+        <div class="btn-row">
+          <span class="orient-label" id="editTextSelCount">Выбрано для текста: 0</span>
+          <button type="button" id="editTextColorBlack" disabled title="Чёрный текст">Чёрный текст</button>
+          <button type="button" id="editTextColorReset" disabled title="Сбросить цвет">По умолчанию</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="ungroupAll">Расцепить всё</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="fit">Вписать в экран</button>
+        <button type="button" class="danger" id="reset">Очистить всё</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="showAisle" checked> Проход 1,5 м</label>
+      <label class="chk"><input type="checkbox" id="gridSnap" checked> Сетка 0,05 м</label>
+      <label class="chk"><input type="checkbox" id="snap" checked> Привязка (snap)</label>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="pallet-block">
+        <h3>Палетоместа</h3>
+        <label class="pallet-tiers">Ярусов:
+          <select id="tiersSelect">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+          </select>
+        </label>
+        <div id="palletStats"></div>
+      </div>
+
+      <div class="legend">
+        <div><span class="sw" style="background:linear-gradient(#93c5fd 48%,#2563eb 52%)"></span> 2,7 м (3 места)</div>
+        <div><span class="sw" style="background:linear-gradient(#fdba74 48%,#ea580c 52%)"></span> 1,8 м (2 места)</div>
+        <div><span class="sw" style="background:linear-gradient(#a8a29e 48%,#78716c 52%)"></span> Стеллаж 60×100 см</div>
+        <div><span class="sw" style="background:linear-gradient(#5eead4 48%,#14b8a6 52%)"></span> Стол (произвольный размер)</div>
+        <div><span class="sw" style="background:rgba(148,163,184,.45)"></span> Проход (вверх/вниз)</div>
+        <div><span class="sw" style="background:rgba(34,197,94,.35);border:1px dashed #7c3aed"></span> ГП — ёмкость европалет 1200×800 мм</div>
+        <div><span class="sw" style="background:rgba(251,146,60,.35);border:1px dashed #c2410c"></span> Зона варки</div>
+      </div>
+
+      <p class="hint">Колёсико — масштаб · Delete — удалить · R — поворот · Ctrl+клик — в выделение · «Сцепить выделенное» — 2+ объекта · «Сцепить примыкающие» — BFS от выбранного · Группу тяните за любой объект · Проход: серая полоса · Зоны (ГП, варки, произв.): угловые маркеры · Двойной клик по зоне — редактировать название</p>
+    </aside>
+  </div>
+
+  <script>
+(function () {
+  const ROOM_W = 24.9;
+  const ROOM_H = 10.3;
+  const DEPTH = 1.2;
+  const AISLE_H = 1.5;
+  const DEFAULT_AISLE_Y = 7.1;
+  const SCALE = 100;
+  const SNAP_THRESHOLD = 0.2;
+  const GRID_STEP = 0.05;
+  const MARGIN = 55;
+  const STORAGE_KEY = 'planogramma-mezonin-v2';
+  const SHELF_W = 0.6;
+  const SHELF_H = 1.0;
+  const DEFAULT_TABLE_W = 1.2;
+  const DEFAULT_TABLE_H = 0.8;
+  const GP_DEFAULT_W = 3;
+  const GP_DEFAULT_H = 2;
+  const BREW_DEFAULT_W = 3;
+  const BREW_DEFAULT_H = 2;
+  const CUSTOM_DEFAULT_W = 3;
+  const CUSTOM_DEFAULT_H = 2;
+  const CUSTOM_DEFAULT_FILL = '#94a3b8';
+  const CUSTOM_DEFAULT_STROKE = '#64748b';
+  const CUSTOM_COLOR_PRESETS = [
+    '#94a3b8', '#f472b6', '#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'
+  ];
+  const GP_MIN_SIZE = 0.5;
+  const ZONE_STYLES = {
+    gp: {
+      fill: 'rgba(34,197,94,0.28)',
+      stroke: '#7c3aed',
+      labelFill: '#14532d',
+      subFill: '#166534',
+      dimFill: '#052e16'
+    },
+    brew: {
+      fill: 'rgba(251,146,60,0.32)',
+      stroke: '#c2410c',
+      labelFill: '#7c2d12',
+      subFill: '#9a3412',
+      dimFill: '#431407'
+    },
+    custom: {
+      fill: 'rgba(148,163,184,0.35)',
+      stroke: '#64748b',
+      labelFill: '#334155',
+      subFill: '#475569',
+      dimFill: '#1e293b'
+    }
+  };
+  const EURO_PALLET_X = 1.2;
+  const EURO_PALLET_Y = 0.8;
+  const GP_PALLET_GAP = 0;
+  const HANDLE_R = 6;
+
+  const svg = document.getElementById('svg');
+  const world = document.getElementById('world');
+  const viewport = document.getElementById('viewport');
+  const statsEl = document.getElementById('stats');
+  const palletStatsEl = document.getElementById('palletStats');
+  const tiersSelect = document.getElementById('tiersSelect');
+  const deleteBtn = document.getElementById('deleteSection');
+
+  let sections = [];
+  let gpZones = [];
+  let lastTableW = DEFAULT_TABLE_W;
+  let lastTableH = DEFAULT_TABLE_H;
+  let nextId = 1;
+  let nextZoneId = 1;
+  let selectedIds = new Set();
+  let lastSelectedId = null;
+  let selectedZoneId = null;
+  let tiers = 2;
+  let showAisle = true;
+  let gridSnapOn = true;
+  let snapOn = true;
+  let aisleY = DEFAULT_AISLE_Y;
+  let snapGuides = null;
+  let printMode = false;
+  let dimToolActive = false;
+  let dimPick = null;
+  let printAnnotations = [];
+  let selectedAnnotationId = null;
+  let nextAnnotationId = 1;
+  let printTextScale = 1;
+  let selectedPrintTargets = new Set();
+  let primaryPrintTarget = null;
+
+  const PRINT_ZOOM_MIN = 0.3;
+  const PRINT_ZOOM_MAX = 5;
+
+  let view = { panX: 0, panY: 0, zoom: 1 };
+  let savedEditView = null;
+  let savedPrintView = null;
+  let isPrinting = false;
+  let spacePan = false;
+  let drag = null;
+  let pan = null;
+
+  const px = (m) => m * SCALE;
+  const fmt = (m) => m.toFixed(2).replace('.', ',') + ' м';
+
+  function labelTransform(cx, cy, w, h) {
+    if (h > w) return `rotate(90, ${cx}, ${cy})`;
+    return '';
+  }
+
+  function labelFontSize(text, w, h, maxSize) {
+    const pw = w * SCALE;
+    const ph = h * SCALE;
+    const n = (text || '').length || 1;
+    const em = 0.58;
+    const line = 1.2;
+    let size;
+    if (h > w) {
+      size = Math.min(maxSize, pw * 0.35, ph * 0.15, ph * 0.88 / (n * em), pw * 0.72 / line);
+    } else {
+      size = Math.min(maxSize, pw * 0.35, ph * 0.15, pw * 0.88 / (n * em), ph * 0.72 / line);
+    }
+    return Math.max(6, Math.round(size * 10) / 10);
+  }
+
+  function itemKind(s) {
+    return s.kind || 'section';
+  }
+
+  function isMezzanineSection(s) {
+    return itemKind(s) === 'section';
+  }
+
+  function roundSize(v) {
+    return Math.round(v / GRID_STEP) * GRID_STEP;
+  }
+
+  function fmtDimShort(m) {
+    const v = roundSize(m);
+    const s = v.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    return s || '0';
+  }
+
+  function tableSizeKey(w, h) {
+    return `${fmtDimShort(w)}×${fmtDimShort(h)}`;
+  }
+
+  function snapToGrid(v) {
+    const snapped = Math.round(v / GRID_STEP) * GRID_STEP;
+    return Math.round(snapped * 1000) / 1000;
+  }
+
+  function applyGridSnap(s) {
+    if (!gridSnapOn) return;
+    s.x = snapToGrid(s.x);
+    s.y = snapToGrid(s.y);
+    clampSection(s);
+  }
+
+  function sectionSpec(type) {
+    if (type === 2.7) {
+      return { len: 2.7, label: '2,7', places: 3, color: ['#93c5fd', '#2563eb'] };
+    }
+    return { len: 1.8, label: '1,8', places: 2, color: ['#fdba74', '#ea580c'] };
+  }
+
+  function applyDimensions(s) {
+    const kind = itemKind(s);
+    let bw;
+    let bd;
+    if (kind === 'shelf') {
+      bw = SHELF_W;
+      bd = SHELF_H;
+      s.label = 'Стеллаж 60×100';
+      s.color = ['#a8a29e', '#78716c'];
+      s.places = 0;
+    } else if (kind === 'table') {
+      bw = roundSize(s.tableW ?? lastTableW);
+      bd = roundSize(s.tableH ?? lastTableH);
+      s.tableW = bw;
+      s.tableH = bd;
+      s.label = `Стол ${fmtDimShort(bw)}×${fmtDimShort(bd)}`;
+      s.color = ['#5eead4', '#14b8a6'];
+      s.places = 0;
+    } else {
+      const spec = sectionSpec(s.type);
+      s.len = spec.len;
+      s.label = spec.label;
+      s.places = spec.places;
+      s.color = spec.color;
+      bw = spec.len;
+      bd = DEPTH;
+    }
+    if (s.rotation === 90) {
+      s.w = bd;
+      s.h = bw;
+    } else {
+      s.w = bw;
+      s.h = bd;
+      if (kind === 'section') s.rotation = 0;
+    }
+  }
+
+  function createSection(type, x, y, rotation) {
+    const s = { id: nextId++, kind: 'section', type, x, y, rotation: rotation === 90 ? 90 : 0, groupId: null };
+    applyDimensions(s);
+    return s;
+  }
+
+  function createShelf(x, y, rotation) {
+    const s = { id: nextId++, kind: 'shelf', x, y, rotation: rotation === 90 ? 90 : 0, groupId: null };
+    applyDimensions(s);
+    return s;
+  }
+
+  function createTable(tableW, tableH, x, y, rotation) {
+    const s = {
+      id: nextId++,
+      kind: 'table',
+      tableW: roundSize(tableW),
+      tableH: roundSize(tableH),
+      x,
+      y,
+      rotation: rotation === 90 ? 90 : 0,
+      groupId: null
+    };
+    applyDimensions(s);
+    return s;
+  }
+
+  function serializeItem(s) {
+    const kind = itemKind(s);
+    const base = { id: s.id, x: s.x, y: s.y, rotation: s.rotation || 0 };
+    if (typeof s.textScale === 'number' && s.textScale !== 1) base.textScale = s.textScale;
+    if (s.textOrient === 'vl' || s.textOrient === 'vr') base.textOrient = s.textOrient;
+    else if (s.textOrient === 'v') base.textOrient = 'vl';
+    if (s.textColor) base.textColor = s.textColor;
+    if (s.groupId) base.groupId = s.groupId;
+    if (kind === 'section') {
+      return { ...base, type: s.type === 2.7 ? 'section27' : 'section18' };
+    }
+    if (kind === 'shelf') return { ...base, type: 'shelf' };
+    return { ...base, type: 'table', w: s.tableW, h: s.tableH };
+  }
+
+  function deserializeItem(item) {
+    const rot = item.rotation === 90 ? 90 : 0;
+    let s;
+    const t = item.type;
+    if (t === 'shelf') {
+      s = { id: item.id, kind: 'shelf', x: item.x, y: item.y, rotation: rot };
+    } else if (t === 'table') {
+      s = {
+        id: item.id,
+        kind: 'table',
+        tableW: item.w ?? item.tableW ?? DEFAULT_TABLE_W,
+        tableH: item.h ?? item.tableH ?? DEFAULT_TABLE_H,
+        x: item.x,
+        y: item.y,
+        rotation: rot
+      };
+    } else if (t === 'section27' || t === 2.7 || t === '2.7') {
+      s = { id: item.id, kind: 'section', type: 2.7, x: item.x, y: item.y, rotation: rot };
+    } else if (t === 'section18' || t === 1.8 || t === '1.8') {
+      s = { id: item.id, kind: 'section', type: 1.8, x: item.x, y: item.y, rotation: rot };
+    } else {
+      s = {
+        id: item.id,
+        kind: 'section',
+        type: item.type,
+        x: item.x,
+        y: item.y,
+        rotation: rot
+      };
+    }
+    applyDimensions(s);
+    if (typeof item.textScale === 'number') s.textScale = clampTextScale(item.textScale);
+    if (item.textOrient === 'vl' || item.textOrient === 'vr') s.textOrient = item.textOrient;
+    else if (item.textOrient === 'v') s.textOrient = 'vl';
+    if (item.textColor) s.textColor = item.textColor;
+    if (item.groupId) s.groupId = item.groupId;
+    else s.groupId = null;
+    return s;
+  }
+
+  function newGroupId() {
+    return 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function normalizeExclude(exclude) {
+    if (exclude == null) return new Set();
+    if (exclude instanceof Set) return exclude;
+    if (Array.isArray(exclude)) return new Set(exclude);
+    return new Set([exclude]);
+  }
+
+  function getGroupMembers(groupId) {
+    if (!groupId) return [];
+    return sections.filter((s) => s.groupId === groupId);
+  }
+
+  function groupBBox(members) {
+    let x1 = Infinity;
+    let y1 = Infinity;
+    let x2 = -Infinity;
+    let y2 = -Infinity;
+    for (const s of members) {
+      const r = sectionRect(s);
+      x1 = Math.min(x1, r.x);
+      y1 = Math.min(y1, r.y);
+      x2 = Math.max(x2, r.x + r.w);
+      y2 = Math.max(y2, r.y + r.h);
+    }
+    return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+  }
+
+  function itemsTouch(a, b, eps = 0.05) {
+    const ra = sectionRect(a);
+    const rb = sectionRect(b);
+    const gapX = Math.max(0, Math.max(ra.x - (rb.x + rb.w), rb.x - (ra.x + ra.w)));
+    const gapY = Math.max(0, Math.max(ra.y - (rb.y + rb.h), rb.y - (ra.y + ra.h)));
+    const touchX = gapX <= eps
+      && (overlapsY(ra, rb)
+        || Math.abs(ra.y + ra.h - rb.y) <= eps
+        || Math.abs(rb.y + rb.h - ra.y) <= eps
+        || Math.abs(ra.y - rb.y) <= eps
+        || Math.abs(ra.y + ra.h - rb.y - rb.h) <= eps);
+    const touchY = gapY <= eps
+      && (overlapsX(ra, rb)
+        || Math.abs(ra.x + ra.w - rb.x) <= eps
+        || Math.abs(rb.x + rb.w - ra.x) <= eps
+        || Math.abs(ra.x - rb.x) <= eps
+        || Math.abs(ra.x + ra.w - rb.x - rb.w) <= eps);
+    if (touchX || touchY) return true;
+    return overlapsX(ra, rb) && overlapsY(ra, rb);
+  }
+
+  function findTouchingComponent(start) {
+    const visited = new Set();
+    const queue = [start];
+    visited.add(start.id);
+    const component = [start];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const other of sections) {
+        if (visited.has(other.id)) continue;
+        if (!itemsTouch(cur, other)) continue;
+        visited.add(other.id);
+        component.push(other);
+        queue.push(other);
+      }
+    }
+    return component;
+  }
+
+  function findAllTouchingComponents() {
+    const unvisited = new Set(sections.map((s) => s.id));
+    const components = [];
+    while (unvisited.size) {
+      const id = unvisited.values().next().value;
+      unvisited.delete(id);
+      const start = sections.find((s) => s.id === id);
+      const comp = findTouchingComponent(start);
+      for (const s of comp) unvisited.delete(s.id);
+      if (comp.length > 1) components.push(comp);
+    }
+    return components;
+  }
+
+  function getPrimarySelectedId() {
+    if (lastSelectedId != null && selectedIds.has(lastSelectedId)) return lastSelectedId;
+    return selectedIds.size ? [...selectedIds][0] : null;
+  }
+
+  function isSectionSelected(id) {
+    return selectedIds.has(id);
+  }
+
+  function clearPlanSelection() {
+    selectedIds.clear();
+    lastSelectedId = null;
+  }
+
+  function setSingleSectionSelection(id) {
+    selectedIds.clear();
+    selectedIds.add(id);
+    lastSelectedId = id;
+    selectedZoneId = null;
+  }
+
+  function toggleSectionSelection(id) {
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+      if (lastSelectedId === id) {
+        lastSelectedId = selectedIds.size ? [...selectedIds].at(-1) : null;
+      }
+    } else {
+      selectedIds.add(id);
+      lastSelectedId = id;
+    }
+    selectedZoneId = null;
+  }
+
+  function addToSectionSelection(id) {
+    selectedIds.add(id);
+    lastSelectedId = id;
+    selectedZoneId = null;
+  }
+
+  function handleSectionPointerSelect(id, e) {
+    if (e.ctrlKey || e.metaKey) toggleSectionSelection(id);
+    else if (e.shiftKey) addToSectionSelection(id);
+    else setSingleSectionSelection(id);
+  }
+
+  function linkAdjacentFromSelection() {
+    let components;
+    if (selectedIds.size > 0 && selectedZoneId == null) {
+      const startId = getPrimarySelectedId();
+      const start = sections.find((s) => s.id === startId);
+      if (!start) return;
+      const comp = findTouchingComponent(start);
+      components = comp.length > 1 ? [comp] : [];
+    } else {
+      components = findAllTouchingComponents();
+    }
+    for (const comp of components) {
+      const gid = newGroupId();
+      for (const s of comp) s.groupId = gid;
+    }
+    saveState();
+    render();
+  }
+
+  function linkSelectedObjects() {
+    if (selectedZoneId != null) {
+      alert('Выделите 2+ объекта (Ctrl+клик)');
+      return;
+    }
+    const members = sections.filter((s) => selectedIds.has(s.id));
+    if (members.length < 2) {
+      alert('Выделите 2+ объекта (Ctrl+клик)');
+      return;
+    }
+    const gid = newGroupId();
+    for (const s of members) s.groupId = gid;
+    saveState();
+    render();
+  }
+
+  function ungroupSelected() {
+    const sid = getPrimarySelectedId();
+    if (sid == null || selectedZoneId != null) return;
+    const s = sections.find((x) => x.id === sid);
+    if (!s?.groupId) return;
+    const gid = s.groupId;
+    for (const m of sections) {
+      if (m.groupId === gid) m.groupId = null;
+    }
+    saveState();
+    render();
+  }
+
+  function ungroupAll() {
+    let changed = false;
+    for (const s of sections) {
+      if (s.groupId) {
+        s.groupId = null;
+        changed = true;
+      }
+    }
+    if (changed) {
+      saveState();
+      render();
+    }
+  }
+
+  function getStateData() {
+    return {
+      items: sections.map(serializeItem),
+      sections: sections.filter(isMezzanineSection).map((s) => ({
+        id: s.id, type: s.type, x: s.x, y: s.y, rotation: s.rotation || 0
+      })),
+      zones: gpZones.map((z) => {
+        const kind = zoneKind(z);
+        const out = {
+          id: z.id,
+          kind,
+          x: z.x,
+          y: z.y,
+          w: z.w,
+          h: z.h,
+          label: z.label || zoneDefaultLabel(z)
+        };
+        if (kind === 'custom') {
+          if (z.fillColor) out.fillColor = z.fillColor;
+          if (z.strokeColor) out.strokeColor = z.strokeColor;
+        }
+        if (typeof z.textScale === 'number' && z.textScale !== 1) out.textScale = z.textScale;
+        if (z.textOrient === 'vl' || z.textOrient === 'vr') out.textOrient = z.textOrient;
+        else if (z.textOrient === 'v') out.textOrient = 'vl';
+        if (z.textColor) out.textColor = z.textColor;
+        return out;
+      }),
+      aisleY,
+      gridSnapOn,
+      snapOn,
+      tiers,
+      lastTableW,
+      lastTableH,
+      nextId,
+      nextZoneId,
+      printAnnotations,
+      printTextScale,
+      nextAnnotationId
+    };
+  }
+
+  function validateStateData(data) {
+    if (!data || typeof data !== 'object') return 'Неверный формат файла';
+    if (!Array.isArray(data.items) && !Array.isArray(data.sections)) {
+      return 'В файле нет объектов (items или sections)';
+    }
+    if (Array.isArray(data.zones)) {
+      for (const z of data.zones) {
+        if (typeof z.x !== 'number' || typeof z.y !== 'number'
+            || typeof z.w !== 'number' || typeof z.h !== 'number') {
+          return 'Некорректные координаты зоны';
+        }
+      }
+    }
+    if (Array.isArray(data.printAnnotations)) {
+      for (const a of data.printAnnotations) {
+        if (typeof a.x1 !== 'number' || typeof a.y1 !== 'number'
+            || typeof a.x2 !== 'number' || typeof a.y2 !== 'number') {
+          return 'Некорректная размерная аннотация';
+        }
+      }
+    }
+    return null;
+  }
+
+  function applyStateData(data) {
+    const err = validateStateData(data);
+    if (err) throw new Error(err);
+
+    if (Array.isArray(data.items)) {
+      sections = data.items.map(deserializeItem);
+      nextId = data.nextId || (sections.length ? Math.max(...sections.map((s) => s.id)) + 1 : 1);
+    } else if (Array.isArray(data.sections)) {
+      sections = data.sections.map((item) => deserializeItem({
+        ...item,
+        type: item.type === 2.7 ? 'section27' : 'section18'
+      }));
+      nextId = data.nextId || (sections.length ? Math.max(...sections.map((s) => s.id)) + 1 : 1);
+    }
+
+    if (typeof data.lastTableW === 'number') lastTableW = data.lastTableW;
+    if (typeof data.lastTableH === 'number') lastTableH = data.lastTableH;
+    document.getElementById('tableW').value = String(lastTableW);
+    document.getElementById('tableH').value = String(lastTableH);
+    if (typeof data.aisleY === 'number') aisleY = data.aisleY;
+    if (typeof data.gridSnapOn === 'boolean') {
+      gridSnapOn = data.gridSnapOn;
+      document.getElementById('gridSnap').checked = gridSnapOn;
+    }
+    if (typeof data.snapOn === 'boolean') {
+      snapOn = data.snapOn;
+      document.getElementById('snap').checked = snapOn;
+    }
+    if (data.tiers === 1 || data.tiers === 2) {
+      tiers = data.tiers;
+      tiersSelect.value = String(tiers);
+    }
+    if (Array.isArray(data.zones)) {
+      gpZones = data.zones.map((item) => {
+        const kind = item.kind || 'gp';
+        const z = {
+          id: item.id,
+          kind,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h,
+          label: item.label || zoneDefaultLabel({ kind, label: item.label })
+        };
+        if (kind === 'custom') {
+          z.fillColor = item.fillColor || CUSTOM_DEFAULT_FILL;
+          z.strokeColor = item.strokeColor || darkenHex(z.fillColor);
+        }
+        if (typeof item.textScale === 'number') z.textScale = clampTextScale(item.textScale);
+        if (item.textOrient === 'vl' || item.textOrient === 'vr') z.textOrient = item.textOrient;
+        else if (item.textOrient === 'v') z.textOrient = 'vl';
+        if (item.textColor) z.textColor = item.textColor;
+        return z;
+      });
+      nextZoneId = data.nextZoneId || (gpZones.length
+        ? Math.max(...gpZones.map((z) => z.id)) + 1
+        : 1);
+    }
+
+    printAnnotations = Array.isArray(data.printAnnotations)
+      ? data.printAnnotations.map((a) => {
+          const ann = { ...a };
+          if (ann.textOrient === 'v') ann.textOrient = 'vl';
+          else if (ann.textOrient && ann.textOrient !== 'vl' && ann.textOrient !== 'vr') delete ann.textOrient;
+          return ann;
+        })
+      : [];
+    nextAnnotationId = data.nextAnnotationId
+      || (printAnnotations.length
+        ? Math.max(...printAnnotations.map((a) => a.id || 0)) + 1
+        : 1);
+    printTextScale = typeof data.printTextScale === 'number'
+      ? Math.max(0.5, Math.min(2, data.printTextScale))
+      : 1;
+
+    clearSelection();
+    selectedAnnotationId = null;
+    selectedPrintTargets = new Set();
+    primaryPrintTarget = null;
+    dimPick = null;
+    updatePrintTextLabel();
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getStateData()));
+    } catch (_) { /* quota / private mode */ }
+  }
+
+  function loadState() {
+    try {
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) raw = localStorage.getItem('planogramma-mezonin-v1');
+      if (!raw) return false;
+      applyStateData(JSON.parse(raw));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function exportToFile() {
+    const data = getStateData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const name = `planogramma-mezonin-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    saveState();
+  }
+
+  function importFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        applyStateData(data);
+        saveState();
+        if (printMode) fitToPrint();
+        else fitToScreen();
+        render();
+      } catch (e) {
+        alert('Не удалось загрузить файл: ' + (e.message || 'ошибка чтения'));
+      }
+    };
+    reader.onerror = () => alert('Не удалось прочитать файл');
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  function addSection(len) {
+    const s = createSection(len, snapToGrid(0.5), snapToGrid(0.5), 0);
+    sections.push(s);
+    setSingleSectionSelection(s.id);
+    saveState();
+    render();
+  }
+
+  function addShelf() {
+    const s = createShelf(snapToGrid(0.5), snapToGrid(0.5), 0);
+    sections.push(s);
+    setSingleSectionSelection(s.id);
+    saveState();
+    render();
+  }
+
+  function addTable() {
+    const wIn = document.getElementById('tableW');
+    const hIn = document.getElementById('tableH');
+    let tw = parseFloat(wIn.value, 10);
+    let th = parseFloat(hIn.value, 10);
+    if (!Number.isFinite(tw) || tw < 0.2) tw = lastTableW;
+    if (!Number.isFinite(th) || th < 0.2) th = lastTableH;
+    tw = roundSize(Math.min(10, tw));
+    th = roundSize(Math.min(10, th));
+    lastTableW = tw;
+    lastTableH = th;
+    wIn.value = String(tw);
+    hIn.value = String(th);
+    const s = createTable(tw, th, snapToGrid(0.5), snapToGrid(0.5), 0);
+    sections.push(s);
+    setSingleSectionSelection(s.id);
+    saveState();
+    render();
+  }
+
+  function zoneKind(z) {
+    return z.kind || 'gp';
+  }
+
+  function hexToRgb(hex) {
+    const h = String(hex || '').replace('#', '');
+    const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+    const n = parseInt(full, 16);
+    if (!Number.isFinite(n)) return { r: 148, g: 163, b: 184 };
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function hexToRgba(hex, alpha) {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function darkenHex(hex, factor = 0.72) {
+    const { r, g, b } = hexToRgb(hex);
+    const toHex = (v) => Math.round(v * factor).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+  function zoneDefaultLabel(z) {
+    const kind = zoneKind(z);
+    if (kind === 'brew') return 'Зона варки';
+    if (kind === 'custom') return 'Новая зона';
+    return 'ГП';
+  }
+
+  function getZoneStyle(z) {
+    const kind = zoneKind(z);
+    if (kind !== 'custom') return ZONE_STYLES[kind] || ZONE_STYLES.gp;
+    const base = z.fillColor || CUSTOM_DEFAULT_FILL;
+    const stroke = z.strokeColor || darkenHex(base);
+    return {
+      fill: hexToRgba(base, 0.35),
+      stroke,
+      labelFill: darkenHex(base, 0.45),
+      subFill: darkenHex(base, 0.55),
+      dimFill: darkenHex(base, 0.35)
+    };
+  }
+
+  function getSelectedCustomZone() {
+    if (selectedZoneId == null) return null;
+    const z = gpZones.find((x) => x.id === selectedZoneId);
+    return z && zoneKind(z) === 'custom' ? z : null;
+  }
+
+  function getPrimaryCustomPrintZone() {
+    const pt = getPrimaryPrintTarget();
+    if (!pt || pt.type !== 'zone') return null;
+    const z = gpZones.find((x) => x.id === pt.id);
+    return z && zoneKind(z) === 'custom' ? z : null;
+  }
+
+  function applyCustomZoneColor(z, hex) {
+    if (!z || zoneKind(z) !== 'custom') return;
+    z.fillColor = hex;
+    z.strokeColor = darkenHex(hex);
+    saveState();
+    render();
+  }
+
+  function setCustomZoneLabel(z, label) {
+    if (!z || zoneKind(z) !== 'custom') return;
+    const next = String(label || '').trim() || 'Новая зона';
+    if (z.label === next) return;
+    z.label = next;
+    saveState();
+    render();
+  }
+
+  function updateColorPresetActive(hex) {
+    for (const rootId of ['zoneColorPresets', 'printZoneColorPresets']) {
+      const root = document.getElementById(rootId);
+      if (!root) continue;
+      for (const btn of root.querySelectorAll('button[data-color]')) {
+        btn.classList.toggle('active', btn.dataset.color.toLowerCase() === String(hex).toLowerCase());
+      }
+    }
+  }
+
+  function initColorPresets() {
+    for (const rootId of ['zoneColorPresets', 'printZoneColorPresets']) {
+      const root = document.getElementById(rootId);
+      if (!root || root.childElementCount) continue;
+      for (const color of CUSTOM_COLOR_PRESETS) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.color = color;
+        btn.style.background = color;
+        btn.title = color;
+        btn.addEventListener('click', () => {
+          const z = printMode ? getPrimaryCustomPrintZone() : getSelectedCustomZone();
+          if (!z) return;
+          applyCustomZoneColor(z, color);
+          const picker = document.getElementById(printMode ? 'printZoneColorPicker' : 'zoneColorPicker');
+          if (picker) picker.value = color;
+        });
+        root.appendChild(btn);
+      }
+    }
+  }
+
+  function updateZoneEditUI() {
+    const block = document.getElementById('zoneEditBlock');
+    const printBlock = document.getElementById('printZoneEditBlock');
+    const printSep = document.getElementById('printZoneEditSep');
+    const z = printMode ? getPrimaryCustomPrintZone() : getSelectedCustomZone();
+    const show = !!z;
+    if (block) block.classList.toggle('hidden', !show || printMode);
+    if (printBlock) printBlock.classList.toggle('hidden', !show || !printMode);
+    if (printSep) printSep.classList.toggle('hidden', !show || !printMode);
+    if (!z) return;
+    const labelIn = document.getElementById('zoneLabelInput');
+    const colorIn = document.getElementById('zoneColorPicker');
+    const printLabelIn = document.getElementById('printZoneLabelInput');
+    const printColorIn = document.getElementById('printZoneColorPicker');
+    if (labelIn && document.activeElement !== labelIn) labelIn.value = z.label || '';
+    if (printLabelIn && document.activeElement !== printLabelIn) printLabelIn.value = z.label || '';
+    const hex = z.fillColor || CUSTOM_DEFAULT_FILL;
+    if (colorIn) colorIn.value = hex;
+    if (printColorIn) printColorIn.value = hex;
+    updateColorPresetActive(hex);
+  }
+
+  function focusZoneLabelInput() {
+    const z = getSelectedCustomZone();
+    if (!z) return;
+    const labelIn = document.getElementById('zoneLabelInput');
+    if (!labelIn) return;
+    labelIn.focus();
+    labelIn.select();
+  }
+
+  function zoneDimText(z) {
+    return `${fmtDimShort(z.w)} × ${fmtDimShort(z.h)} м`;
+  }
+
+  function zoneRect(z) {
+    return { x: z.x, y: z.y, w: z.w, h: z.h };
+  }
+
+  function clampZone(z) {
+    z.w = Math.max(GP_MIN_SIZE, Math.min(ROOM_W, z.w));
+    z.h = Math.max(GP_MIN_SIZE, Math.min(ROOM_H, z.h));
+    z.x = Math.max(0, Math.min(ROOM_W - z.w, z.x));
+    z.y = Math.max(0, Math.min(ROOM_H - z.h, z.y));
+  }
+
+  function applyGridSnapZone(z) {
+    if (!gridSnapOn) return;
+    z.x = snapToGrid(z.x);
+    z.y = snapToGrid(z.y);
+    z.w = Math.max(GRID_STEP, snapToGrid(z.w));
+    z.h = Math.max(GRID_STEP, snapToGrid(z.h));
+    clampZone(z);
+  }
+
+  function addGpZone() {
+    const zA = zoneADepth();
+    const z = {
+      id: nextZoneId++,
+      kind: 'gp',
+      x: snapToGrid((ROOM_W - GP_DEFAULT_W) / 2),
+      y: snapToGrid(Math.max(0, (zA - GP_DEFAULT_H) / 2)),
+      w: GP_DEFAULT_W,
+      h: GP_DEFAULT_H,
+      label: 'ГП'
+    };
+    clampZone(z);
+    gpZones.push(z);
+    selectedZoneId = z.id;
+    clearPlanSelection();
+    saveState();
+    render();
+  }
+
+  function addBrewZone() {
+    const zA = zoneADepth();
+    const z = {
+      id: nextZoneId++,
+      kind: 'brew',
+      x: snapToGrid(1),
+      y: snapToGrid(Math.max(0, (zA - BREW_DEFAULT_H) / 2)),
+      w: BREW_DEFAULT_W,
+      h: BREW_DEFAULT_H,
+      label: 'Зона варки'
+    };
+    clampZone(z);
+    gpZones.push(z);
+    selectedZoneId = z.id;
+    clearPlanSelection();
+    saveState();
+    render();
+  }
+
+  function addCustomZone() {
+    const zA = zoneADepth();
+    let x;
+    let y;
+    if (gpZones.length) {
+      const last = gpZones[gpZones.length - 1];
+      x = snapToGrid(last.x + last.w + 0.2);
+      y = snapToGrid(last.y);
+      if (x + CUSTOM_DEFAULT_W > ROOM_W) {
+        x = snapToGrid(Math.max(0, (ROOM_W - CUSTOM_DEFAULT_W) / 2));
+        y = snapToGrid(Math.min(ROOM_H - CUSTOM_DEFAULT_H, last.y + last.h + 0.2));
+      }
+    } else {
+      x = snapToGrid((ROOM_W - CUSTOM_DEFAULT_W) / 2);
+      y = snapToGrid(Math.max(0, (zA - CUSTOM_DEFAULT_H) / 2));
+    }
+    const z = {
+      id: nextZoneId++,
+      kind: 'custom',
+      x,
+      y,
+      w: CUSTOM_DEFAULT_W,
+      h: CUSTOM_DEFAULT_H,
+      label: 'Новая зона',
+      fillColor: CUSTOM_DEFAULT_FILL,
+      strokeColor: CUSTOM_DEFAULT_STROKE
+    };
+    clampZone(z);
+    gpZones.push(z);
+    selectedZoneId = z.id;
+    clearPlanSelection();
+    saveState();
+    render();
+  }
+
+  function deleteSelected() {
+    if (selectedZoneId != null) {
+      gpZones = gpZones.filter((z) => z.id !== selectedZoneId);
+      selectedZoneId = null;
+      saveState();
+      render();
+      return;
+    }
+    if (selectedIds.size === 0) return;
+    sections = sections.filter((s) => !selectedIds.has(s.id));
+    clearPlanSelection();
+    saveState();
+    render();
+  }
+
+  function clearSelection() {
+    clearPlanSelection();
+    selectedZoneId = null;
+  }
+
+  function selectZone(id) {
+    selectedZoneId = id;
+    clearPlanSelection();
+  }
+
+  function updateDeleteButton() {
+    deleteBtn.disabled = selectedIds.size === 0 && selectedZoneId == null;
+  }
+
+  function updateSelectionInfo() {
+    const el = document.getElementById('selectionInfo');
+    if (!el) return;
+    el.innerHTML = `Выделено: <strong>${selectedIds.size}</strong>`;
+    updateTextOrientUI();
+    updateTextColorUI();
+  }
+
+  function calcEuroPalletsInZone(w, h) {
+    const gap = GP_PALLET_GAP;
+    const uw = Math.max(0, w - gap);
+    const uh = Math.max(0, h - gap);
+    const countA = Math.floor(uw / EURO_PALLET_X) * Math.floor(uh / EURO_PALLET_Y);
+    const countB = Math.floor(uw / EURO_PALLET_Y) * Math.floor(uh / EURO_PALLET_X);
+    const count = Math.max(countA, countB);
+    const orientation = countB > countA ? 'B' : countA > countB ? 'A' : 'A/B';
+    return { count, countA, countB, orientation };
+  }
+
+  function gpZoneEuroCapacity(z) {
+    return calcEuroPalletsInZone(z.w, z.h);
+  }
+
+  function rotateItemAroundRaw(s, pivotCx, pivotCy) {
+    const mcx = s.x + s.w / 2;
+    const mcy = s.y + s.h / 2;
+    const vx = mcx - pivotCx;
+    const vy = mcy - pivotCy;
+    const nmcx = pivotCx + vy;
+    const nmcy = pivotCy - vx;
+    s.rotation = s.rotation === 90 ? 0 : 90;
+    applyDimensions(s);
+    s.x = nmcx - s.w / 2;
+    s.y = nmcy - s.h / 2;
+  }
+
+  function sectionAtPosInBounds(s, x, y) {
+    return x >= 0 && y >= 0 && x + s.w <= ROOM_W + 1e-9 && y + s.h <= ROOM_H + 1e-9;
+  }
+
+  function sectionAtPosClearOfAisle(s, x, y) {
+    if (!showAisle) return true;
+    const top = y;
+    const bottom = y + s.h;
+    const aTop = aisleY;
+    const aBot = aisleY + AISLE_H;
+    return bottom <= aTop + 1e-9 || top >= aBot - 1e-9;
+  }
+
+  function canPlaceSectionAt(s, x, y) {
+    return sectionAtPosInBounds(s, x, y) && sectionAtPosClearOfAisle(s, x, y);
+  }
+
+  function canApplyGroupDelta(origEntries, deltaX, deltaY) {
+    for (const o of origEntries) {
+      const m = sections.find((x) => x.id === o.id);
+      if (!m) continue;
+      if (!canPlaceSectionAt(m, o.x + deltaX, o.y + deltaY)) return false;
+    }
+    return true;
+  }
+
+  function clampGroupDelta(origEntries, deltaX, deltaY) {
+    let dxMin = -Infinity;
+    let dxMax = Infinity;
+    let dyMin = -Infinity;
+    let dyMax = Infinity;
+    for (const o of origEntries) {
+      const m = sections.find((x) => x.id === o.id);
+      if (!m) continue;
+      dxMin = Math.max(dxMin, -o.x);
+      dxMax = Math.min(dxMax, ROOM_W - m.w - o.x);
+      dyMin = Math.max(dyMin, -o.y);
+      dyMax = Math.min(dyMax, ROOM_H - m.h - o.y);
+      if (showAisle) {
+        const aTop = aisleY;
+        const aBot = aisleY + AISLE_H;
+        if (o.y + m.h <= aTop + 1e-9) {
+          dyMax = Math.min(dyMax, aTop - m.h - o.y);
+        } else if (o.y >= aBot - 1e-9) {
+          dyMin = Math.max(dyMin, aBot - o.y);
+        }
+      }
+    }
+    let dx = Math.max(dxMin, Math.min(dxMax, deltaX));
+    let dy = Math.max(dyMin, Math.min(dyMax, deltaY));
+    if (!canApplyGroupDelta(origEntries, dx, dy)) {
+      const dxOnly = Math.max(dxMin, Math.min(dxMax, deltaX));
+      if (canApplyGroupDelta(origEntries, dxOnly, 0)) return { dx: dxOnly, dy: 0 };
+      const dyOnly = Math.max(dyMin, Math.min(dyMax, deltaY));
+      if (canApplyGroupDelta(origEntries, 0, dyOnly)) return { dx: 0, dy: dyOnly };
+      return { dx: 0, dy: 0 };
+    }
+    return { dx, dy };
+  }
+
+  function applyGroupDelta(origEntries, deltaX, deltaY) {
+    for (const o of origEntries) {
+      const m = sections.find((x) => x.id === o.id);
+      if (!m) continue;
+      m.x = o.x + deltaX;
+      m.y = o.y + deltaY;
+    }
+    return true;
+  }
+
+  function restoreGroupFromOrig(origEntries) {
+    for (const o of origEntries) {
+      const m = sections.find((x) => x.id === o.id);
+      if (m) {
+        m.x = o.x;
+        m.y = o.y;
+      }
+    }
+  }
+
+  function rotateItemAround(s, pivotCx, pivotCy) {
+    const snap = { x: s.x, y: s.y, rotation: s.rotation };
+    rotateItemAroundRaw(s, pivotCx, pivotCy);
+    if (!canPlaceSectionAt(s, s.x, s.y)) {
+      s.x = snap.x;
+      s.y = snap.y;
+      s.rotation = snap.rotation;
+      applyDimensions(s);
+      return false;
+    }
+    if (gridSnapOn) {
+      s.x = snapToGrid(s.x);
+      s.y = snapToGrid(s.y);
+    }
+    if (!canPlaceSectionAt(s, s.x, s.y)) {
+      s.x = snap.x;
+      s.y = snap.y;
+      s.rotation = snap.rotation;
+      applyDimensions(s);
+      return false;
+    }
+    return true;
+  }
+
+  function rotateGroupMembers(members, pivotCx, pivotCy) {
+    const snapshots = members.map((m) => ({
+      id: m.id,
+      x: m.x,
+      y: m.y,
+      rotation: m.rotation
+    }));
+    for (const m of members) rotateItemAroundRaw(m, pivotCx, pivotCy);
+    const ok = members.every((m) => canPlaceSectionAt(m, m.x, m.y));
+    if (!ok) {
+      for (const snap of snapshots) {
+        const m = sections.find((x) => x.id === snap.id);
+        if (!m) continue;
+        m.x = snap.x;
+        m.y = snap.y;
+        m.rotation = snap.rotation;
+        applyDimensions(m);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function rotateSelected() {
+    const sid = getPrimarySelectedId();
+    if (sid == null || selectedZoneId != null) return;
+    const s = sections.find((x) => x.id === sid);
+    if (!s || !isPlanItem(s)) return;
+    if (s.groupId) {
+      const members = getGroupMembers(s.groupId);
+      const bbox = groupBBox(members);
+      const cx = bbox.x + bbox.w / 2;
+      const cy = bbox.y + bbox.h / 2;
+      if (rotateGroupMembers(members, cx, cy)) {
+        saveState();
+        render();
+      }
+      return;
+    }
+    const cx = s.x + s.w / 2;
+    const cy = s.y + s.h / 2;
+    if (rotateItemAround(s, cx, cy)) {
+      saveState();
+    }
+    render();
+  }
+
+  function overlapsY(a, b) {
+    return !(a.y + a.h <= b.y || b.y + b.h <= a.y);
+  }
+
+  function overlapsX(a, b) {
+    return !(a.x + a.w <= b.x || b.x + b.w <= a.x);
+  }
+
+  function aisleRect() {
+    return { x: 0, y: aisleY, w: ROOM_W, h: AISLE_H, aisle: true };
+  }
+
+  function zoneADepth() {
+    return aisleY;
+  }
+
+  function zoneBDepth() {
+    return ROOM_H - aisleY - AISLE_H;
+  }
+
+  function obstacles(excludeSectionIds, excludeZoneId) {
+    const ex = normalizeExclude(excludeSectionIds);
+    const list = [];
+    if (showAisle) list.push(aisleRect());
+    for (const s of sections) {
+      if (!ex.has(s.id)) list.push(sectionRect(s));
+    }
+    for (const z of gpZones) {
+      if (z.id !== excludeZoneId) list.push(zoneRect(z));
+    }
+    return list;
+  }
+
+  function gapLeft(rect, obs) {
+    let edge = 0;
+    for (const o of obs) {
+      if (!overlapsY(rect, o)) continue;
+      const r = o.x + o.w;
+      if (r <= rect.x && r > edge) edge = r;
+    }
+    return rect.x - edge;
+  }
+
+  function gapRight(rect, obs) {
+    let edge = ROOM_W;
+    for (const o of obs) {
+      if (!overlapsY(rect, o)) continue;
+      if (o.x >= rect.x + rect.w && o.x < edge) edge = o.x;
+    }
+    return edge - (rect.x + rect.w);
+  }
+
+  function gapTop(rect, obs) {
+    let edge = 0;
+    for (const o of obs) {
+      if (!overlapsX(rect, o)) continue;
+      const b = o.y + o.h;
+      if (b <= rect.y && b > edge) edge = b;
+    }
+    return rect.y - edge;
+  }
+
+  function gapBottom(rect, obs) {
+    let edge = ROOM_H;
+    for (const o of obs) {
+      if (!overlapsX(rect, o)) continue;
+      if (o.y >= rect.y + rect.h && o.y < edge) edge = o.y;
+    }
+    return edge - (rect.y + rect.h);
+  }
+
+  function clampSection(s) {
+    s.x = Math.max(0, Math.min(ROOM_W - s.w, s.x));
+    s.y = Math.max(0, Math.min(ROOM_H - s.h, s.y));
+  }
+
+  function isPlanItem(obj) {
+    return obj != null && sections.some((s) => s.id === obj.id);
+  }
+
+  function sectionRect(s) {
+    return { x: s.x, y: s.y, w: s.w, h: s.h };
+  }
+
+  function selectedItemLabel(s) {
+    if (!s) return '—';
+    if (itemKind(s) === 'section') {
+      return `${s.label} м${s.rotation === 90 ? ' (повёрнута)' : ''}`;
+    }
+    return `${s.label || '—'}${s.rotation === 90 ? ' (повёрнута)' : ''}`;
+  }
+
+  function snapCandidatesXRect(r, w, excludeSectionIds, excludeZoneId, includeRoomWalls = true) {
+    const ex = normalizeExclude(excludeSectionIds);
+    const cands = [];
+    if (includeRoomWalls) {
+      cands.push({ pos: 0, line: 0 });
+      cands.push({ pos: ROOM_W - w, line: ROOM_W });
+    }
+    for (const o of sections) {
+      if (ex.has(o.id)) continue;
+      const or = sectionRect(o);
+      if (!overlapsY(r, or)) continue;
+      cands.push({ pos: or.x + or.w, line: or.x + or.w });
+      cands.push({ pos: or.x - w, line: or.x });
+    }
+    for (const z of gpZones) {
+      if (z.id === excludeZoneId) continue;
+      const zr = zoneRect(z);
+      if (!overlapsY(r, zr)) continue;
+      cands.push({ pos: zr.x + zr.w, line: zr.x + zr.w });
+      cands.push({ pos: zr.x - w, line: zr.x });
+    }
+    return cands;
+  }
+
+  function snapCandidatesYRect(r, h, excludeSectionIds, excludeZoneId, includeRoomWalls = true) {
+    const ex = normalizeExclude(excludeSectionIds);
+    const cands = [];
+    if (includeRoomWalls) {
+      cands.push({ pos: 0, line: 0 });
+      cands.push({ pos: ROOM_H - h, line: ROOM_H });
+    }
+    if (showAisle) {
+      cands.push({ pos: aisleY - h, line: aisleY });
+      cands.push({ pos: aisleY + AISLE_H, line: aisleY + AISLE_H });
+    }
+    for (const o of sections) {
+      if (ex.has(o.id)) continue;
+      const or = sectionRect(o);
+      if (!overlapsX(r, or)) continue;
+      cands.push({ pos: or.y + or.h, line: or.y + or.h });
+      cands.push({ pos: or.y - h, line: or.y });
+    }
+    for (const z of gpZones) {
+      if (z.id === excludeZoneId) continue;
+      const zr = zoneRect(z);
+      if (!overlapsX(r, zr)) continue;
+      cands.push({ pos: zr.y + zr.h, line: zr.y + zr.h });
+      cands.push({ pos: zr.y - h, line: zr.y });
+    }
+    return cands;
+  }
+
+  function snapCandidatesX(s, excludeIds, includeRoomWalls = true) {
+    const r = sectionRect(s);
+    return snapCandidatesXRect(r, s.w, excludeIds, null, includeRoomWalls);
+  }
+
+  function snapCandidatesY(s, excludeIds, includeRoomWalls = true) {
+    const r = sectionRect(s);
+    return snapCandidatesYRect(r, s.h, excludeIds, null, includeRoomWalls);
+  }
+
+  function dragExcludeIds(drag) {
+    if (drag?.groupIds?.length) return drag.groupIds;
+    return drag?.id != null ? [drag.id] : [];
+  }
+
+  function getSnapAdjustment(s, excludeIds, includeRoomWalls = true) {
+    if (!snapOn) return { dx: 0, dy: 0 };
+    const sx = bestSnap(s.x, snapCandidatesX(s, excludeIds, includeRoomWalls));
+    const sy = bestSnap(s.y, snapCandidatesY(s, excludeIds, includeRoomWalls));
+    const guides = {};
+    let dx = 0;
+    let dy = 0;
+    if (sx) {
+      dx = sx.pos - s.x;
+      guides.x = sx.line;
+    }
+    if (sy) {
+      dy = sy.pos - s.y;
+      guides.y = sy.line;
+    }
+    if (guides.x != null || guides.y != null) snapGuides = guides;
+    else snapGuides = null;
+    return { dx, dy };
+  }
+
+  function positionSectionDrag(drag, mx, my) {
+    const lead = sections.find((x) => x.id === drag.id);
+    const leadOrig = drag.orig?.find((o) => o.id === drag.id);
+    if (!lead || !leadOrig || !drag.orig?.length) return;
+
+    restoreGroupFromOrig(drag.orig);
+
+    let nx = mx - drag.dx;
+    let ny = my - drag.dy;
+    if (gridSnapOn) {
+      nx = snapToGrid(nx);
+      ny = snapToGrid(ny);
+    }
+
+    let deltaX = nx - leadOrig.x;
+    let deltaY = ny - leadOrig.y;
+    ({ dx: deltaX, dy: deltaY } = clampGroupDelta(drag.orig, deltaX, deltaY));
+
+    lead.x = leadOrig.x + deltaX;
+    lead.y = leadOrig.y + deltaY;
+
+    const snapAdj = getSnapAdjustment(lead, dragExcludeIds(drag), false);
+    if (snapAdj.dx !== 0 || snapAdj.dy !== 0) {
+      ({ dx: deltaX, dy: deltaY } = clampGroupDelta(
+        drag.orig, deltaX + snapAdj.dx, deltaY + snapAdj.dy));
+    }
+
+    applyGroupDelta(drag.orig, deltaX, deltaY);
+  }
+
+  function rectForDistances(obj) {
+    if (!obj) return null;
+    const planItem = sections.find((s) => s.id === obj.id);
+    if (planItem?.groupId) return groupBBox(getGroupMembers(planItem.groupId));
+    if (planItem) return sectionRect(planItem);
+    return zoneRect(obj);
+  }
+
+  function distanceExcludeIds(obj) {
+    if (!obj) return null;
+    const planItem = sections.find((s) => s.id === obj.id);
+    if (planItem?.groupId) return getGroupMembers(planItem.groupId).map((m) => m.id);
+    if (planItem) return planItem.id;
+    return null;
+  }
+
+  function applySnapZone(z, excludeZoneId) {
+    snapGuides = null;
+    if (!snapOn) return;
+    const r = zoneRect(z);
+    const sx = bestSnap(z.x, snapCandidatesXRect(r, z.w, null, excludeZoneId));
+    const sy = bestSnap(z.y, snapCandidatesYRect(r, z.h, null, excludeZoneId));
+    const guides = {};
+    if (sx) {
+      z.x = sx.pos;
+      guides.x = sx.line;
+    }
+    if (sy) {
+      z.y = sy.pos;
+      guides.y = sy.line;
+    }
+    if (guides.x != null || guides.y != null) snapGuides = guides;
+    clampZone(z);
+  }
+
+  function bestSnap(value, cands) {
+    let best = null;
+    for (const c of cands) {
+      const d = Math.abs(value - c.pos);
+      if (d <= SNAP_THRESHOLD && (best == null || d < best.d)) {
+        best = { d, pos: c.pos, line: c.line };
+      }
+    }
+    return best;
+  }
+
+  function keepOutOfAisle(s) {
+    if (!showAisle) return;
+    const top = s.y;
+    const bottom = s.y + s.h;
+    const aTop = aisleY;
+    const aBot = aisleY + AISLE_H;
+    if (bottom <= aTop || top >= aBot) return;
+    const cy = s.y + s.h / 2;
+    if (cy < aisleY + AISLE_H / 2) {
+      s.y = aTop - s.h;
+    } else {
+      s.y = aBot;
+    }
+  }
+
+  function applySnap(s, excludeIds) {
+    const adj = getSnapAdjustment(s, excludeIds);
+    if (adj.dx !== 0 || adj.dy !== 0) {
+      const nx = s.x + adj.dx;
+      const ny = s.y + adj.dy;
+      if (canPlaceSectionAt(s, nx, ny)) {
+        s.x = nx;
+        s.y = ny;
+      } else {
+        snapGuides = null;
+      }
+    }
+  }
+
+  function clientToWorld(cx, cy) {
+    const r = svg.getBoundingClientRect();
+    const vb = getViewBox();
+    const sx = (cx - r.left) / r.width;
+    const sy = (cy - r.top) / r.height;
+    return {
+      x: vb.x + sx * vb.w,
+      y: vb.y + sy * vb.h
+    };
+  }
+
+  function getViewBox() {
+    const rw = px(ROOM_W) + MARGIN * 2;
+    const rh = px(ROOM_H) + MARGIN * 2;
+    const cx = -MARGIN + px(ROOM_W) / 2;
+    const cy = -MARGIN + px(ROOM_H) / 2;
+    const vw = rw / view.zoom;
+    const vh = rh / view.zoom;
+    return {
+      x: cx - vw / 2 + view.panX,
+      y: cy - vh / 2 + view.panY,
+      w: vw,
+      h: vh
+    };
+  }
+
+  function applyViewBox() {
+    const vb = getViewBox();
+    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    updatePrintZoomLabel();
+  }
+
+  function applyViewBoxFullRoom() {
+    const rw = px(ROOM_W) + MARGIN * 2;
+    const rh = px(ROOM_H) + MARGIN * 2;
+    svg.setAttribute('viewBox', `${-MARGIN} ${-MARGIN} ${rw} ${rh}`);
+  }
+
+  function clampPrintZoom(z) {
+    return Math.max(PRINT_ZOOM_MIN, Math.min(PRINT_ZOOM_MAX, z));
+  }
+
+  function zoomAt(clientX, clientY, factor) {
+    const r = svg.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
+    const vb = getViewBox();
+    const sx = (clientX - r.left) / r.width;
+    const sy = (clientY - r.top) / r.height;
+    const wx = vb.x + sx * vb.w;
+    const wy = vb.y + sy * vb.h;
+    view.zoom = clampPrintZoom(view.zoom * factor);
+    const rw = px(ROOM_W) + MARGIN * 2;
+    const rh = px(ROOM_H) + MARGIN * 2;
+    const cx = -MARGIN + px(ROOM_W) / 2;
+    const cy = -MARGIN + px(ROOM_H) / 2;
+    const vw = rw / view.zoom;
+    const vh = rh / view.zoom;
+    view.panX = wx - sx * vw - cx + vw / 2;
+    view.panY = wy - sy * vh - cy + vh / 2;
+    applyViewBox();
+  }
+
+  function updatePrintZoomLabel() {
+    const el = document.getElementById('printZoomLabel');
+    if (!el || !printMode) return;
+    el.textContent = Math.round(view.zoom * 100) + '%';
+  }
+
+  function fitToScreen() {
+    view.panX = 0;
+    view.panY = 0;
+    view.zoom = 1;
+    applyViewBox();
+  }
+
+  function fitToPrint() {
+    view.panX = 0;
+    view.panY = 0;
+    const rw = px(ROOM_W) + MARGIN * 2;
+    const rh = px(ROOM_H) + MARGIN * 2;
+    const r = viewport.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      view.zoom = clampPrintZoom(Math.min(r.width / rw, r.height / rh) * 0.98);
+    } else {
+      view.zoom = 1;
+    }
+    applyViewBox();
+  }
+
+  function startPan(e) {
+    pan = { x0: e.clientX, y0: e.clientY, panX0: view.panX, panY0: view.panY };
+    viewport.classList.add('panning');
+  }
+
+  function clampTextScale(v) {
+    return Math.max(0.5, Math.min(2, Math.round(v * 10) / 10));
+  }
+
+  function normalizeTextOrient(v) {
+    if (v === 'v' || v === 'vl') return 'vl';
+    if (v === 'vr') return 'vr';
+    return 'h';
+  }
+
+  function isVerticalTextOrient(v) {
+    const o = normalizeTextOrient(v);
+    return o === 'vl' || o === 'vr';
+  }
+
+  function textOrientAngle(v) {
+    return normalizeTextOrient(v) === 'vr' ? 90 : -90;
+  }
+
+  function textOrientLabel(orient) {
+    if (orient === 'vl') return 'верт. ←';
+    if (orient === 'vr') return 'верт. →';
+    return 'гориз.';
+  }
+
+  function nextTextOrient(orient) {
+    const o = normalizeTextOrient(orient);
+    if (o === 'h') return 'vl';
+    if (o === 'vl') return 'vr';
+    return 'h';
+  }
+
+  function getObjectTextOrient(obj) {
+    return normalizeTextOrient(obj?.textOrient);
+  }
+
+  function setObjectTextOrient(obj, orient) {
+    if (!obj) return;
+    const v = normalizeTextOrient(orient);
+    if (v === 'h') delete obj.textOrient;
+    else obj.textOrient = v;
+  }
+
+  function printTargetKey(type, id) {
+    return `${type}:${id}`;
+  }
+
+  function parsePrintTargetKey(key) {
+    const i = key.indexOf(':');
+    if (i < 0) return null;
+    return { type: key.slice(0, i), id: Number(key.slice(i + 1)) };
+  }
+
+  function getSelectedPrintTargetList() {
+    return [...selectedPrintTargets].map(parsePrintTargetKey).filter(Boolean);
+  }
+
+  function getPrimaryPrintTarget() {
+    if (primaryPrintTarget && selectedPrintTargets.has(printTargetKey(primaryPrintTarget.type, primaryPrintTarget.id))) {
+      return primaryPrintTarget;
+    }
+    const first = getSelectedPrintTargetList()[0];
+    return first || null;
+  }
+
+  function getTextFormatTargets() {
+    if (printMode) {
+      return getSelectedPrintTargetList()
+        .map((t) => getObjectByTextTarget(t))
+        .filter(Boolean);
+    }
+    const out = [];
+    if (selectedZoneId != null) {
+      const z = gpZones.find((x) => x.id === selectedZoneId);
+      if (z) out.push(z);
+    }
+    for (const id of selectedIds) {
+      const s = sections.find((x) => x.id === id);
+      if (s) out.push(s);
+    }
+    return out;
+  }
+
+  function getTextFormatSelectionCount() {
+    if (printMode) return selectedPrintTargets.size;
+    let n = selectedIds.size;
+    if (selectedZoneId != null) n += 1;
+    return n;
+  }
+
+  function isLightTextColor(color) {
+    if (!color) return false;
+    const c = String(color).trim().toLowerCase();
+    if (c === '#fff' || c === '#ffffff' || c === 'white') return true;
+    const m = c.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return Number(m[1]) > 240 && Number(m[2]) > 240 && Number(m[3]) > 240;
+    return false;
+  }
+
+  function printSafeTextColor(color) {
+    return isLightTextColor(color) ? '#111111' : (color || '#111111');
+  }
+
+  function resolveSegmentColor(defaultColor, textColor) {
+    return textColor || defaultColor;
+  }
+
+  function setObjectTextColor(obj, color) {
+    if (!obj) return;
+    if (!color) delete obj.textColor;
+    else obj.textColor = color;
+  }
+
+  function resetObjectTextColor(obj) {
+    if (!obj) return;
+    delete obj.textColor;
+  }
+
+  function setSelectedTextColor(color) {
+    const targets = getTextFormatTargets();
+    if (!targets.length) return;
+    for (const obj of targets) setObjectTextColor(obj, color);
+    saveState();
+    render();
+    updateTextColorUI();
+  }
+
+  function resetSelectedTextColor() {
+    const targets = getTextFormatTargets();
+    if (!targets.length) return;
+    for (const obj of targets) resetObjectTextColor(obj);
+    saveState();
+    render();
+    updateTextColorUI();
+  }
+
+  function updateTextColorUI() {
+    const n = getTextFormatSelectionCount();
+    const hasSel = n > 0;
+    const countText = `Выбрано для текста: ${n}`;
+    for (const id of ['printTextSelCount', 'editTextSelCount']) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = countText;
+    }
+    for (const id of ['textColorBlack', 'textColorReset', 'editTextColorBlack', 'editTextColorReset']) {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = !hasSel;
+    }
+  }
+
+  function getObjectByTextTarget(target) {
+    if (!target) return null;
+    if (target.type === 'annotation') {
+      return printAnnotations.find((a) => a.id === target.id) || null;
+    }
+    if (target.type === 'zone') {
+      return gpZones.find((x) => x.id === target.id) || null;
+    }
+    if (target.type === 'section') {
+      return sections.find((x) => x.id === target.id) || null;
+    }
+    return null;
+  }
+
+  function getActiveTextTarget() {
+    if (printMode) return getPrimaryPrintTarget();
+    if (selectedZoneId != null) return { type: 'zone', id: selectedZoneId };
+    if (selectedIds.size === 1) {
+      const id = getPrimarySelectedId();
+      if (id != null) return { type: 'section', id };
+    }
+    return null;
+  }
+
+  function getSelectedTextOrient() {
+    const target = getActiveTextTarget();
+    if (!target) return 'h';
+    const obj = getObjectByTextTarget(target);
+    return getObjectTextOrient(obj);
+  }
+
+  function setSelectedTextOrient(orient) {
+    let targets;
+    if (printMode) {
+      targets = getSelectedPrintTargetList();
+    } else {
+      targets = [];
+      if (selectedZoneId != null) targets.push({ type: 'zone', id: selectedZoneId });
+      for (const id of selectedIds) targets.push({ type: 'section', id });
+    }
+    if (!targets.length) {
+      const target = getActiveTextTarget();
+      if (target) targets = [target];
+    }
+    let changed = false;
+    for (const target of targets) {
+      const obj = getObjectByTextTarget(target);
+      if (!obj) continue;
+      setObjectTextOrient(obj, orient);
+      changed = true;
+    }
+    if (!changed) return;
+    updateTextOrientUI();
+    saveState();
+    render();
+  }
+
+  function toggleSelectedTextOrient() {
+    setSelectedTextOrient(nextTextOrient(getSelectedTextOrient()));
+  }
+
+  function updateTextOrientUI() {
+    const target = getActiveTextTarget();
+    const selCount = getTextFormatSelectionCount();
+    const hasTarget = selCount > 0;
+    const orient = hasTarget ? getSelectedTextOrient() : 'h';
+    const label = textOrientLabel(orient);
+    const labelText = hasTarget ? `Текст: ${label}` : 'Текст: гориз.';
+    const hint = hasTarget ? '' : ' — выберите объект';
+
+    const printLabel = document.getElementById('textOrientLabel');
+    if (printLabel) printLabel.textContent = labelText + (printMode && !hasTarget ? hint : '');
+
+    const editLabel = document.getElementById('editTextOrientLabel');
+    if (editLabel) editLabel.textContent = labelText + (!printMode && !hasTarget ? hint : '');
+
+    const orientBtns = [
+      ['textOrientH', 'h'], ['textOrientVL', 'vl'], ['textOrientVR', 'vr'],
+      ['editTextOrientH', 'h'], ['editTextOrientVL', 'vl'], ['editTextOrientVR', 'vr']
+    ];
+    for (const [id, mode] of orientBtns) {
+      const btn = document.getElementById(id);
+      if (!btn) continue;
+      btn.disabled = !hasTarget;
+      btn.classList.toggle('primary', hasTarget && orient === mode);
+    }
+
+    for (const id of ['textOrientToggle', 'editTextOrientToggle']) {
+      const btn = document.getElementById(id);
+      if (!btn) continue;
+      btn.disabled = !hasTarget;
+      btn.title = hasTarget ? 'Переключить: гориз. → верт. ← → верт. →' : 'Выберите объект';
+    }
+  }
+
+  function getObjectTextScale(obj) {
+    return clampTextScale(obj?.textScale ?? 1);
+  }
+
+  function getAnnotationTextScale(ann) {
+    return clampTextScale(ann?.textScale ?? printTextScale ?? 1);
+  }
+
+  function setObjectTextScale(obj, scale) {
+    if (!obj) return;
+    const v = clampTextScale(scale);
+    if (Math.abs(v - 1) < 0.001) delete obj.textScale;
+    else obj.textScale = v;
+  }
+
+  function printTargetLabel(target) {
+    if (!target) return '';
+    if (target.type === 'annotation') {
+      const idx = printAnnotations.findIndex((a) => a.id === target.id);
+      return `Размер #${idx >= 0 ? idx + 1 : target.id}`;
+    }
+    if (target.type === 'zone') {
+      const z = gpZones.find((x) => x.id === target.id);
+      const kind = zoneKind(z);
+      if (kind === 'custom') return `${z?.label || 'Зона'} #${target.id}`;
+      return `${kind === 'brew' ? 'Зона варки' : 'ГП'} #${target.id}`;
+    }
+    if (target.type === 'section') {
+      const s = sections.find((x) => x.id === target.id);
+      return `${selectedItemLabel(s)} #${target.id}`;
+    }
+    return '';
+  }
+
+  function isPrintTargetSelected(type, id) {
+    return printMode && selectedPrintTargets.has(printTargetKey(type, id));
+  }
+
+  function isDimPickTarget(type, id) {
+    return printMode && dimPick?.type === type && dimPick.id === id;
+  }
+
+  function selectPrintTarget(target, additive) {
+    if (!target) {
+      clearPrintSelection();
+      return;
+    }
+    const key = printTargetKey(target.type, target.id);
+    if (additive) {
+      if (selectedPrintTargets.has(key)) {
+        selectedPrintTargets.delete(key);
+        if (primaryPrintTarget?.type === target.type && primaryPrintTarget.id === target.id) {
+          const next = getSelectedPrintTargetList()[0];
+          primaryPrintTarget = next ? { type: next.type, id: next.id } : null;
+        }
+      } else {
+        selectedPrintTargets.add(key);
+        primaryPrintTarget = { type: target.type, id: target.id };
+      }
+    } else {
+      selectedPrintTargets = new Set([key]);
+      primaryPrintTarget = { type: target.type, id: target.id };
+    }
+    selectedAnnotationId = target.type === 'annotation' && selectedPrintTargets.has(key)
+      ? target.id
+      : (getPrimaryPrintTarget()?.type === 'annotation' ? getPrimaryPrintTarget().id : null);
+    updatePrintTextLabel();
+    updateTextColorUI();
+  }
+
+  function togglePrintTarget(target) {
+    selectPrintTarget(target, true);
+  }
+
+  function clearPrintSelection() {
+    selectedPrintTargets = new Set();
+    primaryPrintTarget = null;
+    selectedAnnotationId = null;
+    updatePrintTextLabel();
+    updateTextColorUI();
+  }
+
+  function getSelectedTextScale() {
+    const primary = getPrimaryPrintTarget();
+    if (!primary) return printTextScale;
+    if (primary.type === 'annotation') {
+      const ann = printAnnotations.find((a) => a.id === primary.id);
+      return getAnnotationTextScale(ann);
+    }
+    if (primary.type === 'zone') {
+      const z = gpZones.find((x) => x.id === primary.id);
+      return getObjectTextScale(z);
+    }
+    if (primary.type === 'section') {
+      const s = sections.find((x) => x.id === primary.id);
+      return getObjectTextScale(s);
+    }
+    return printTextScale;
+  }
+
+  function adjustSelectedTextScale(delta) {
+    const next = clampTextScale(getSelectedTextScale() + delta);
+    const targets = getSelectedPrintTargetList();
+    if (!targets.length) {
+      printTextScale = next;
+    } else {
+      for (const target of targets) {
+        if (target.type === 'annotation') {
+          const ann = printAnnotations.find((a) => a.id === target.id);
+          if (ann) setObjectTextScale(ann, next);
+        } else if (target.type === 'zone') {
+          const z = gpZones.find((x) => x.id === target.id);
+          if (z) setObjectTextScale(z, next);
+        } else if (target.type === 'section') {
+          const s = sections.find((x) => x.id === target.id);
+          if (s) setObjectTextScale(s, next);
+        }
+      }
+    }
+    updatePrintTextLabel();
+    saveState();
+    render();
+  }
+
+  function scaledLabelFontSize(text, w, h, maxSize, obj) {
+    const base = labelFontSize(text, w, h, maxSize);
+    const scale = obj ? getObjectTextScale(obj) : 1;
+    return base * scale;
+  }
+
+  const OBJECT_TEXT_PAD = 3;
+  const MIN_OBJECT_FONT = 6;
+  const MAX_OBJECT_LINES = 4;
+  const OBJECT_LINE_HEIGHT = 1.2;
+
+  function estimateTextWidth(text, fontSize) {
+    return (text || '').length * fontSize * 0.58;
+  }
+
+  function estimateTextHeight(text, fontSize) {
+    return (text || '').length * fontSize * OBJECT_LINE_HEIGHT;
+  }
+
+  /** Split "Стеллаж 60×100" → ["Стеллаж", "60×100"] for column/line segments. */
+  function splitLabelSegments(text) {
+    const t = String(text || '').trim();
+    if (!t) return [];
+    const dimMatch = t.match(/^(.+?)\s+(\S*×\S*)$/);
+    if (dimMatch) return [dimMatch[1].trim(), dimMatch[2].trim()];
+    const words = t.split(/\s+/);
+    return words.length > 1 ? words : [t];
+  }
+
+  function labelToTextSegments(label, w, h, maxLabel, color, weight, maxWrapLines) {
+    const parts = splitLabelSegments(label);
+    if (parts.length <= 1) {
+      return [{
+        text: label,
+        maxFont: labelFontSize(label, w, h, maxLabel),
+        color,
+        weight,
+        maxWrapLines
+      }];
+    }
+    return parts.map((part, i) => ({
+      text: part,
+      maxFont: labelFontSize(part, w, h, i === 0 ? maxLabel : Math.max(MIN_OBJECT_FONT, maxLabel - 1)),
+      color,
+      weight,
+      maxWrapLines: 1
+    }));
+  }
+
+  function wrapSingleText(text, maxWidth, fontSize, maxLines) {
+    const t = String(text || '');
+    if (!t) return [''];
+    if (maxLines <= 1) return [t];
+
+    if (t.includes('×') && estimateTextWidth(t, fontSize) > maxWidth) {
+      const i = t.indexOf('×');
+      const opts = [
+        [t.slice(0, i + 1), t.slice(i + 1)],
+        [t.slice(0, i), '×' + t.slice(i + 1)]
+      ];
+      for (const opt of opts) {
+        if (opt.length <= maxLines && opt.every((l) => l && estimateTextWidth(l, fontSize) <= maxWidth)) {
+          return opt;
+        }
+      }
+    }
+
+    const words = t.split(/\s+/);
+    if (words.length === 1) {
+      const lines = [];
+      let chunk = '';
+      for (const ch of t) {
+        const trial = chunk + ch;
+        if (estimateTextWidth(trial, fontSize) <= maxWidth || !chunk) chunk = trial;
+        else {
+          lines.push(chunk);
+          chunk = ch;
+          if (lines.length >= maxLines - 1) break;
+        }
+      }
+      if (chunk) lines.push(chunk);
+      return lines.slice(0, maxLines).length ? lines.slice(0, maxLines) : [t];
+    }
+
+    const lines = [];
+    let cur = '';
+    for (let wi = 0; wi < words.length; wi++) {
+      const w = words[wi];
+      const trial = cur ? cur + ' ' + w : w;
+      if (estimateTextWidth(trial, fontSize) <= maxWidth || !cur) cur = trial;
+      else {
+        lines.push(cur);
+        cur = w;
+        if (lines.length >= maxLines - 1) {
+          lines.push([cur, ...words.slice(wi + 1)].join(' '));
+          return lines.slice(0, maxLines);
+        }
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines.slice(0, maxLines).length ? lines.slice(0, maxLines) : [t];
+  }
+
+  function buildObjectTextLines(segments, availW, baseFs, maxBase, forceWrap) {
+    const lines = [];
+    for (const seg of segments) {
+      const fs = Math.max(MIN_OBJECT_FONT, (seg.maxFont / maxBase) * baseFs);
+      const remaining = MAX_OBJECT_LINES - lines.length;
+      if (remaining <= 0) break;
+      const maxWrap = forceWrap
+        ? remaining
+        : Math.min(seg.maxWrapLines || (segments.length > 1 ? 2 : MAX_OBJECT_LINES), remaining);
+      const segLines = wrapSingleText(seg.text, availW, fs, maxWrap);
+      for (const txt of segLines) {
+        lines.push({
+          text: txt,
+          fontSize: fs,
+          color: seg.color,
+          weight: seg.weight || 700
+        });
+      }
+    }
+    return lines;
+  }
+
+  function layoutObjectText(segments, availW, availH, textScale) {
+    const maxBase = Math.max(...segments.map((s) => s.maxFont || 12), MIN_OBJECT_FONT);
+    let baseFs = maxBase * textScale;
+    const fitMargin = 0.98;
+
+    while (baseFs >= MIN_OBJECT_FONT) {
+      const lines = buildObjectTextLines(segments, availW, baseFs, maxBase, false);
+      const totalH = lines.reduce((sum, l) => sum + l.fontSize * OBJECT_LINE_HEIGHT, 0);
+      const widthOk = lines.every((l) => estimateTextWidth(l.text, l.fontSize) <= availW * fitMargin);
+      if (lines.length <= MAX_OBJECT_LINES && widthOk && totalH <= availH * fitMargin) {
+        return { items: lines, clipped: false };
+      }
+      baseFs -= 0.5;
+    }
+
+    return { items: buildObjectTextLines(segments, availW, MIN_OBJECT_FONT, maxBase, true), clipped: true };
+  }
+
+  function appendObjectTextSvgFallback(g, cx, cy, lines, vertical, orient) {
+    const pg = el('g', { class: 'obj-text-print', 'pointer-events': 'none' });
+    const totalH = lines.reduce((sum, l) => sum + l.fontSize * OBJECT_LINE_HEIGHT, 0);
+    let y = -totalH / 2;
+    for (const line of lines) {
+      y += (line.fontSize * OBJECT_LINE_HEIGHT) / 2;
+      pg.appendChild(el('text', {
+        x: 0, y,
+        'text-anchor': 'middle',
+        'dominant-baseline': 'middle',
+        'font-size': line.fontSize,
+        'font-weight': line.weight || 700,
+        fill: printSafeTextColor(line.color),
+        'font-family': '"Segoe UI", system-ui, sans-serif'
+      }, line.text));
+      y += (line.fontSize * OBJECT_LINE_HEIGHT) / 2;
+    }
+    pg.setAttribute('transform', vertical
+      ? `translate(${cx} ${cy}) rotate(${textOrientAngle(orient)})`
+      : `translate(${cx} ${cy})`);
+    g.appendChild(pg);
+  }
+
+  function appendObjectText(g, xM, yM, wM, hM, segments, textScale, textOrient) {
+    const orient = normalizeTextOrient(textOrient);
+    const vertical = isVerticalTextOrient(orient);
+    const pad = OBJECT_TEXT_PAD;
+    const foW = px(wM) - pad * 2;
+    const foH = px(hM) - pad * 2;
+    if (foW < 10 || foH < 10 || !segments.length) return;
+
+    const layout = vertical
+      ? layoutObjectText(segments, foH, foW, textScale)
+      : layoutObjectText(segments, foW, foH, textScale);
+    const lines = layout.items;
+    if (!lines.length) return;
+
+    const cx = px(xM + wM / 2);
+    const cy = px(yM + hM / 2);
+    const foAttrs = {
+      class: 'obj-text-screen',
+      width: vertical ? foH : foW,
+      height: vertical ? foW : foH,
+      'pointer-events': 'none'
+    };
+    if (vertical) {
+      foAttrs.x = cx - foH / 2;
+      foAttrs.y = cy - foW / 2;
+      foAttrs.transform = `rotate(${textOrientAngle(orient)} ${cx} ${cy})`;
+    } else {
+      foAttrs.x = px(xM) + pad;
+      foAttrs.y = px(yM) + pad;
+    }
+
+    const fo = el('foreignObject', foAttrs);
+
+    const overflowMode = layout.clipped ? 'hidden' : 'visible';
+    const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+    div.setAttribute('class', 'obj-text-wrap');
+    div.style.cssText = [
+      'width:100%', 'height:100%', 'box-sizing:border-box',
+      'display:flex', 'flex-direction:column',
+      'align-items:center', 'justify-content:center',
+      'text-align:center', `overflow:${overflowMode}`
+    ].join(';');
+
+    for (const line of lines) {
+      const row = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      row.style.cssText = [
+        `font-size:${line.fontSize}px`,
+        `font-weight:${line.weight || 700}`,
+        `color:${line.color}`,
+        `line-height:${OBJECT_LINE_HEIGHT}`,
+        'flex-shrink:0',
+        'word-break:break-word',
+        'max-width:100%',
+        'width:100%',
+        'text-align:center',
+        layout.clipped ? 'overflow:hidden' : 'overflow:visible'
+      ].join(';');
+      row.textContent = line.text;
+      div.appendChild(row);
+    }
+
+    fo.appendChild(div);
+    g.appendChild(fo);
+    appendObjectTextSvgFallback(g, cx, cy, lines, vertical, orient);
+  }
+
+  function updatePrintTextLabel() {
+    const el = document.getElementById('textSizeLabel');
+    if (!el) return;
+    const val = getSelectedTextScale().toFixed(1).replace('.', ',') + '×';
+    const primary = getPrimaryPrintTarget();
+    const n = selectedPrintTargets.size;
+    let suffix = '';
+    if (n > 1) suffix = ` — ${n} объектов`;
+    else if (primary) suffix = ' — ' + printTargetLabel(primary);
+    else if (printMode) suffix = ' — выберите объект';
+    el.textContent = val + suffix;
+    updateDeleteDimButton();
+    updateTextOrientUI();
+    updateTextColorUI();
+  }
+
+  function updateDeleteDimButton() {
+    const btn = document.getElementById('deleteDim');
+    if (!btn) return;
+    const primary = getPrimaryPrintTarget();
+    btn.disabled = !printMode
+      || dimToolActive
+      || primary?.type !== 'annotation';
+  }
+
+  function updateDimHint() {
+    const hint = document.getElementById('dimHint');
+    if (!hint) return;
+    if (!printMode || !dimToolActive) {
+      hint.textContent = '';
+      return;
+    }
+    if (!dimPick) hint.textContent = 'Кликните первый объект или зону';
+    else hint.textContent = 'Кликните второй объект или зону';
+  }
+
+  function setPrintMode(on) {
+    printMode = on;
+    document.body.classList.toggle('print-mode', on);
+    document.body.classList.toggle('dim-tool', on && dimToolActive);
+    document.getElementById('printToolbar').classList.toggle('hidden', !on);
+    document.getElementById('editToolbar').style.display = on ? 'none' : '';
+    if (on) {
+      savedEditView = { panX: view.panX, panY: view.panY, zoom: view.zoom };
+      dimToolActive = false;
+      dimPick = null;
+      clearSelection();
+      clearPrintSelection();
+      fitToPrint();
+    } else {
+      dimToolActive = false;
+      dimPick = null;
+      clearPrintSelection();
+      spacePan = false;
+      document.body.classList.remove('space-pan');
+      pan = null;
+      viewport.classList.remove('panning');
+      if (savedEditView) {
+        view = { ...savedEditView };
+        savedEditView = null;
+      } else {
+        fitToScreen();
+      }
+      applyViewBox();
+    }
+    updateDimHint();
+    render();
+  }
+
+  function toggleDimTool() {
+    if (!printMode) return;
+    dimToolActive = !dimToolActive;
+    dimPick = null;
+    document.body.classList.toggle('dim-tool', dimToolActive);
+    document.getElementById('addDim').classList.toggle('primary', dimToolActive);
+    updateDimHint();
+    updateDeleteDimButton();
+    render();
+  }
+
+  function rectFromTarget(target) {
+    if (!target) return null;
+    if (target.type === 'section') {
+      const s = sections.find((x) => x.id === target.id);
+      if (!s) return null;
+      if (s.groupId) return groupBBox(getGroupMembers(s.groupId));
+      return sectionRect(s);
+    }
+    const z = gpZones.find((x) => x.id === target.id);
+    return z ? zoneRect(z) : null;
+  }
+
+  function closestPointsBetweenRects(a, b) {
+    const distX = Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)));
+    const distY = Math.max(0, Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
+    const cxA = a.x + a.w / 2;
+    const cyA = a.y + a.h / 2;
+    const cxB = b.x + b.w / 2;
+    const cyB = b.y + b.h / 2;
+    let x1;
+    let y1;
+    let x2;
+    let y2;
+
+    if (distX === 0 && distY === 0) {
+      x1 = cxA; y1 = cyA; x2 = cxB; y2 = cyB;
+    } else if (distX === 0) {
+      const midX = (Math.max(a.x, b.x) + Math.min(a.x + a.w, b.x + b.w)) / 2;
+      x1 = x2 = midX;
+      if (a.y + a.h <= b.y) { y1 = a.y + a.h; y2 = b.y; }
+      else { y1 = a.y; y2 = b.y + b.h; }
+    } else if (distY === 0) {
+      const midY = (Math.max(a.y, b.y) + Math.min(a.y + a.h, b.y + b.h)) / 2;
+      y1 = y2 = midY;
+      if (a.x + a.w <= b.x) { x1 = a.x + a.w; x2 = b.x; }
+      else { x1 = a.x; x2 = b.x + b.w; }
+    } else if (a.x + a.w <= b.x && a.y + a.h <= b.y) {
+      x1 = a.x + a.w; y1 = a.y + a.h; x2 = b.x; y2 = b.y;
+    } else if (a.x + a.w <= b.x && b.y + b.h <= a.y) {
+      x1 = a.x + a.w; y1 = a.y; x2 = b.x; y2 = b.y + b.h;
+    } else if (b.x + b.w <= a.x && a.y + a.h <= b.y) {
+      x1 = a.x; y1 = a.y + a.h; x2 = b.x + b.w; y2 = b.y;
+    } else if (b.x + b.w <= a.x && b.y + b.h <= a.y) {
+      x1 = a.x; y1 = a.y; x2 = b.x + b.w; y2 = b.y + b.h;
+    } else {
+      x1 = cxA; y1 = cyA; x2 = cxB; y2 = cyB;
+    }
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    return { x1, y1, x2, y2, dist };
+  }
+
+  function createAnnotationFromTargets(t1, t2) {
+    const r1 = rectFromTarget(t1);
+    const r2 = rectFromTarget(t2);
+    if (!r1 || !r2) return null;
+    const pts = closestPointsBetweenRects(r1, r2);
+    return {
+      id: nextAnnotationId++,
+      target1: { ...t1 },
+      target2: { ...t2 },
+      x1: pts.x1,
+      y1: pts.y1,
+      x2: pts.x2,
+      y2: pts.y2,
+      distance: pts.dist
+    };
+  }
+
+  function refreshAnnotationGeometry(ann) {
+    const r1 = rectFromTarget(ann.target1);
+    const r2 = rectFromTarget(ann.target2);
+    if (!r1 || !r2) return false;
+    const pts = closestPointsBetweenRects(r1, r2);
+    ann.x1 = pts.x1;
+    ann.y1 = pts.y1;
+    ann.x2 = pts.x2;
+    ann.y2 = pts.y2;
+    ann.distance = pts.dist;
+    return true;
+  }
+
+  function pickTargetFromEvent(e) {
+    const stack = document.elementsFromPoint(e.clientX, e.clientY);
+    for (const node of stack) {
+      if (!(node instanceof Element) || !svg.contains(node)) continue;
+      if (dimToolActive && node.closest('#manual-dims')) continue;
+      if (!dimToolActive) {
+        const annEl = node.closest('[data-ann-id]')
+          || node.closest('.manual-dim')
+          || node.closest('.dim-hit')?.closest('[data-ann-id]');
+        if (annEl?.dataset.annId) {
+          return { type: 'annotation', id: Number(annEl.dataset.annId) };
+        }
+      }
+      const zoneEl = node.closest('[data-zone-id]');
+      if (zoneEl?.dataset.zoneId && !zoneEl.dataset.resize) {
+        return { type: 'zone', id: Number(zoneEl.dataset.zoneId) };
+      }
+      const secEl = node.closest('.section[data-id]');
+      if (secEl?.dataset.id) {
+        return { type: 'section', id: Number(secEl.dataset.id) };
+      }
+    }
+    return null;
+  }
+
+  function handleDimClick(target) {
+    if (!dimPick) {
+      dimPick = target;
+      updateDimHint();
+      render();
+      return;
+    }
+    if (dimPick.type === target.type && dimPick.id === target.id) return;
+    const ann = createAnnotationFromTargets(dimPick, target);
+    if (ann) {
+      if (printTextScale !== 1) ann.textScale = printTextScale;
+      printAnnotations.push(ann);
+      selectPrintTarget({ type: 'annotation', id: ann.id });
+      saveState();
+    }
+    dimPick = null;
+    updateDimHint();
+    render();
+  }
+
+  function deleteSelectedAnnotation() {
+    if (selectedAnnotationId == null) return;
+    printAnnotations = printAnnotations.filter((a) => a.id !== selectedAnnotationId);
+    clearPrintSelection();
+    saveState();
+    render();
+  }
+
+  function renderManualDimensions() {
+    const g = el('g', { id: 'manual-dims', class: 'manual-dims' });
+    for (const ann of printAnnotations) {
+      refreshAnnotationGeometry(ann);
+      const sel = isPrintTargetSelected('annotation', ann.id);
+      const ag = el('g', {
+        class: 'manual-dim' + (sel ? ' selected print-target-sel' : ''),
+        'data-ann-id': ann.id
+      });
+      const fs = Math.max(8, Math.round(12 * getAnnotationTextScale(ann) * 10) / 10);
+      drawDim(ag, px(ann.x1), px(ann.y1), px(ann.x2), px(ann.y2),
+        fmt(ann.distance), false, false, fs, true, ann.textOrient, ann.textColor);
+      g.appendChild(ag);
+    }
+    if (dimPick) {
+      const r = rectFromTarget(dimPick);
+      if (r) {
+        const hg = el('g', { 'pointer-events': 'none', opacity: 0.55 });
+        hg.appendChild(el('rect', {
+          x: px(r.x), y: px(r.y), width: px(r.w), height: px(r.h),
+          fill: 'none', stroke: '#2563eb', 'stroke-width': 2, 'stroke-dasharray': '6 4'
+        }));
+        g.appendChild(hg);
+      }
+    }
+    return g;
+  }
+
+  function applyViewBoxForPrint() {
+    applyViewBox();
+  }
+
+  function el(name, attrs, text) {
+    const n = document.createElementNS('http://www.w3.org/2000/svg', name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function gapLabel(gap) {
+    return gap < 0.005 ? '0,00 м' : fmt(gap);
+  }
+
+  function drawDim(g, x1, y1, x2, y2, label, horiz, flush, fontSizeOverride, interactive, textOrient, textColor) {
+    const stroke = flush ? '#16a34a' : '#2563eb';
+    const fill = textColor || (flush ? '#15803d' : '#1d4ed8');
+    const marker = flush ? 'url(#dim-arrow-snap)' : 'url(#dim-arrow)';
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    if (len > 1) {
+      if (interactive) {
+        g.appendChild(el('line', {
+          class: 'dim-hit',
+          x1, y1, x2, y2,
+          stroke: 'transparent', 'stroke-width': 14,
+          'pointer-events': 'stroke'
+        }));
+      }
+      g.appendChild(el('line', {
+        class: interactive ? 'dim-visible' : '',
+        x1, y1, x2, y2, stroke, 'stroke-width': flush ? 1.4 : 1.2,
+        'stroke-dasharray': flush ? '4 3' : 'none',
+        'marker-start': marker, 'marker-end': marker,
+        'pointer-events': interactive ? 'none' : undefined
+      }));
+    }
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const fontSize = fontSizeOverride || Math.max(8, Math.round(12 * (printMode ? printTextScale : 1) * 10) / 10);
+    const orient = normalizeTextOrient(textOrient);
+    const vertical = isVerticalTextOrient(orient);
+    const tw = label.length * (fontSize * 0.6) + 10;
+    const th = fontSize + 8;
+    const boxW = vertical ? th : tw;
+    const boxH = vertical ? tw : th;
+    const labelG = el('g', { class: 'dim-label' });
+    labelG.appendChild(el('rect', {
+      x: -boxW / 2, y: -boxH / 2, width: boxW, height: boxH,
+      fill: '#fff', 'fill-opacity': 0.95,
+      stroke: flush ? '#86efac' : '#93c5fd', 'stroke-width': 0.6, rx: 3
+    }));
+    labelG.appendChild(el('text', {
+      x: 0, y: 1,
+      'text-anchor': 'middle', 'dominant-baseline': 'middle',
+      'font-size': fontSize, fill, 'font-weight': '700'
+    }, label));
+    labelG.setAttribute('transform', vertical
+      ? `translate(${mx} ${my}) rotate(${textOrientAngle(orient)})`
+      : `translate(${mx} ${my})`);
+    g.appendChild(labelG);
+  }
+
+  function renderSnapGuides() {
+    if (!snapGuides) return null;
+    const g = el('g', { class: 'snap-guides', 'pointer-events': 'none' });
+    const stroke = '#16a34a';
+    const dash = '6 4';
+    if (snapGuides.x != null) {
+      const x = px(snapGuides.x);
+      g.appendChild(el('line', {
+        x1: x, y1: 0, x2: x, y2: px(ROOM_H),
+        stroke, 'stroke-width': 2, 'stroke-dasharray': dash
+      }));
+    }
+    if (snapGuides.y != null) {
+      const y = px(snapGuides.y);
+      g.appendChild(el('line', {
+        x1: 0, y1: y, x2: px(ROOM_W), y2: y,
+        stroke, 'stroke-width': 2, 'stroke-dasharray': dash
+      }));
+    }
+    return g;
+  }
+
+  function objectForDistances() {
+    if (drag?.type === 'zone' || drag?.type === 'zone-resize') {
+      return gpZones.find((z) => z.id === drag.id) || null;
+    }
+    if (drag?.type === 'section') {
+      return sections.find((x) => x.id === drag.id) || null;
+    }
+    if (selectedZoneId != null) {
+      return gpZones.find((z) => z.id === selectedZoneId) || null;
+    }
+    const sid = getPrimarySelectedId();
+    if (sid != null) {
+      return sections.find((x) => x.id === sid) || null;
+    }
+    return null;
+  }
+
+  function dragMembersForSection(s) {
+    if (s.groupId) return getGroupMembers(s.groupId);
+    if (selectedIds.size > 1 && selectedIds.has(s.id)) {
+      return sections.filter((m) => selectedIds.has(m.id));
+    }
+    return [s];
+  }
+
+  function renderDistances(rect, excludeSectionId, excludeZoneId) {
+    const layer = el('g', { id: 'distances-layer', 'pointer-events': 'none' });
+    const obs = obstacles(excludeSectionId, excludeZoneId);
+    const r = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+    const gL = gapLeft(r, obs);
+    const gR = gapRight(r, obs);
+    const gT = gapTop(r, obs);
+    const gB = gapBottom(r, obs);
+
+    const cx = px(rect.x + rect.w / 2);
+    const cy = px(rect.y + rect.h / 2);
+    const x0 = px(rect.x);
+    const x1 = px(rect.x + rect.w);
+    const y0 = px(rect.y);
+    const y1 = px(rect.y + rect.h);
+
+    drawDim(layer, px(rect.x - gL), cy, x0, cy, gapLabel(gL), true, gL < 0.005);
+    drawDim(layer, x1, cy, px(rect.x + rect.w + gR), cy, gapLabel(gR), true, gR < 0.005);
+    drawDim(layer, cx, px(rect.y - gT), cx, y0, gapLabel(gT), false, gT < 0.005);
+    drawDim(layer, cx, y1, cx, px(rect.y + rect.h + gB), gapLabel(gB), false, gB < 0.005);
+    return layer;
+  }
+
+  function appendZoneLabels(zg, z) {
+    const kind = zoneKind(z);
+    const st = getZoneStyle(z);
+    const dim = zoneDimText(z);
+    const vertical = isVerticalTextOrient(getObjectTextOrient(z));
+    const wrapSeg = vertical ? 1 : 2;
+    const baseDim = labelFontSize(dim, z.w, z.h, 16);
+    const baseLabel = labelFontSize(z.label || zoneDefaultLabel(z), z.w, z.h, 12);
+    const baseSub = Math.max(MIN_OBJECT_FONT, baseDim - 2);
+    const segments = [
+      {
+        text: z.label || zoneDefaultLabel(z),
+        maxFont: baseLabel,
+        color: resolveSegmentColor(st.labelFill, z.textColor),
+        weight: 700,
+        maxWrapLines: wrapSeg
+      },
+      {
+        text: dim,
+        maxFont: baseDim,
+        color: resolveSegmentColor(st.dimFill, z.textColor),
+        weight: 700,
+        maxWrapLines: wrapSeg
+      }
+    ];
+    if (kind === 'gp') {
+      const cap = gpZoneEuroCapacity(z);
+      segments.push({
+        text: `Европалет: ${cap.count}`,
+        maxFont: baseSub,
+        color: resolveSegmentColor(st.subFill, z.textColor),
+        weight: 600,
+        maxWrapLines: 1
+      });
+    }
+    appendObjectText(zg, z.x, z.y, z.w, z.h, segments, getObjectTextScale(z), getObjectTextOrient(z));
+  }
+
+  function renderGpZonesLayer() {
+    const g = el('g', { class: 'gp-zones', id: 'gp-zones-layer' });
+    for (const z of gpZones) {
+      const sel = !printMode && z.id === selectedZoneId;
+      const printSel = isPrintTargetSelected('zone', z.id);
+      const dimPickSel = isDimPickTarget('zone', z.id);
+      const kind = zoneKind(z);
+      const st = getZoneStyle(z);
+      let zoneClass = 'gp-zone gp-zone--' + kind;
+      if (sel) zoneClass += ' selected';
+      if (printSel) zoneClass += ' print-target-sel';
+      if (dimPickSel) zoneClass += ' print-dim-pick';
+      const zg = el('g', {
+        class: zoneClass,
+        'data-zone-id': z.id,
+        style: printMode ? 'cursor:crosshair' : 'cursor:move'
+      });
+      let stroke = st.stroke;
+      let sw = 1.8;
+      if (sel) { stroke = '#fbbf24'; sw = 2.5; }
+      if (printSel) { stroke = '#2563eb'; sw = 3; }
+      if (dimPickSel) { stroke = '#2563eb'; sw = 2.5; }
+      zg.appendChild(el('rect', {
+        x: px(z.x), y: px(z.y), width: px(z.w), height: px(z.h),
+        fill: st.fill,
+        stroke,
+        'stroke-width': sw,
+        'stroke-dasharray': '8 5'
+      }));
+      const dimXY = zoneDimText(z);
+      if (kind === 'gp') {
+        const cap = gpZoneEuroCapacity(z);
+        zg.appendChild(el('title', {}, `1,2×0,8 м · ${dimXY} · ориентация ${cap.orientation}`));
+      } else if (kind === 'brew') {
+        zg.appendChild(el('title', {}, `${z.label || 'Зона варки'} · ${dimXY}`));
+      } else {
+        zg.appendChild(el('title', {}, `${z.label || 'Новая зона'} · ${dimXY}`));
+      }
+      appendZoneLabels(zg, z);
+      if (printMode) {
+        zg.appendChild(el('rect', {
+          class: 'print-hit',
+          x: px(z.x), y: px(z.y), width: px(z.w), height: px(z.h),
+          fill: 'transparent', stroke: 'none'
+        }));
+      }
+      g.appendChild(zg);
+    }
+    return g;
+  }
+
+  function renderGroupOutline() {
+    const sid = getPrimarySelectedId();
+    if (sid == null || selectedZoneId != null) return null;
+    const s = sections.find((x) => x.id === sid);
+    if (!s?.groupId) return null;
+    const members = getGroupMembers(s.groupId);
+    if (members.length < 2) return null;
+    const pad = 0.03;
+    const bbox = groupBBox(members);
+    const g = el('g', { class: 'group-outline', 'pointer-events': 'none' });
+    g.appendChild(el('rect', {
+      x: px(bbox.x - pad),
+      y: px(bbox.y - pad),
+      width: px(bbox.w + pad * 2),
+      height: px(bbox.h + pad * 2),
+      fill: 'none',
+      stroke: '#7c3aed',
+      'stroke-width': 2,
+      'stroke-dasharray': '8 4'
+    }));
+    g.appendChild(el('title', {}, `Группа: ${members.length} объектов`));
+    return g;
+  }
+
+  function renderGpZoneHandles() {
+    const z = gpZones.find((x) => x.id === selectedZoneId);
+    if (!z) return null;
+    const st = getZoneStyle(z);
+    const g = el('g', { class: 'gp-handles', id: 'gp-handles-layer' });
+    const corners = [
+      { c: 'nw', x: z.x, y: z.y },
+      { c: 'ne', x: z.x + z.w, y: z.y },
+      { c: 'sw', x: z.x, y: z.y + z.h },
+      { c: 'se', x: z.x + z.w, y: z.y + z.h }
+    ];
+    for (const { c, x, y } of corners) {
+      g.appendChild(el('circle', {
+        cx: px(x), cy: px(y), r: HANDLE_R,
+        fill: '#fff', stroke: st.stroke, 'stroke-width': 2,
+        'data-zone-id': z.id, 'data-resize': c,
+        style: 'cursor:' + (c === 'nw' || c === 'se' ? 'nwse-resize' : 'nesw-resize')
+      }));
+    }
+    return g;
+  }
+
+  function resizeZoneByCorner(z, corner, mx, my, orig) {
+    let x1 = orig.x;
+    let y1 = orig.y;
+    let x2 = orig.x + orig.w;
+    let y2 = orig.y + orig.h;
+    if (corner.includes('w')) x1 = mx;
+    if (corner.includes('e')) x2 = mx;
+    if (corner.includes('n')) y1 = my;
+    if (corner.includes('s')) y2 = my;
+    if (x2 - x1 < GP_MIN_SIZE) {
+      if (corner.includes('w')) x1 = x2 - GP_MIN_SIZE;
+      else x2 = x1 + GP_MIN_SIZE;
+    }
+    if (y2 - y1 < GP_MIN_SIZE) {
+      if (corner.includes('n')) y1 = y2 - GP_MIN_SIZE;
+      else y2 = y1 + GP_MIN_SIZE;
+    }
+    z.x = x1;
+    z.y = y1;
+    z.w = x2 - x1;
+    z.h = y2 - y1;
+    clampZone(z);
+  }
+
+  function renderZoneLabels() {
+    const zA = zoneADepth();
+    const zB = zoneBDepth();
+    const g = el('g', { class: 'zones', 'pointer-events': 'none' });
+    g.appendChild(el('text', {
+      x: px(ROOM_W / 2),
+      y: px(zA / 2) + 6,
+      'text-anchor': 'middle',
+      'font-size': 22,
+      fill: '#cbd5e1',
+      'font-weight': '600'
+    }, `Зона A — ${fmt(zA)}`));
+    g.appendChild(el('text', {
+      x: px(ROOM_W / 2),
+      y: px(aisleY + AISLE_H + zB / 2) + 6,
+      'text-anchor': 'middle',
+      'font-size': 22,
+      fill: '#cbd5e1',
+      'font-weight': '600'
+    }, `Зона B — ${fmt(zB)}`));
+    g.appendChild(el('text', {
+      x: px(ROOM_W / 2),
+      y: px(0) - 8,
+      'text-anchor': 'middle',
+      'font-size': 11,
+      fill: '#64748b'
+    }, 'стена A'));
+    g.appendChild(el('text', {
+      x: px(ROOM_W / 2),
+      y: px(ROOM_H) + 22,
+      'text-anchor': 'middle',
+      'font-size': 11,
+      fill: '#64748b'
+    }, 'стена B'));
+    return g;
+  }
+
+  function updateStats() {
+    const mezz = sections.filter(isMezzanineSection);
+    const n27 = mezz.filter((s) => s.type === 2.7).length;
+    const n18 = mezz.filter((s) => s.type === 1.8).length;
+    const nShelf = sections.filter((s) => itemKind(s) === 'shelf').length;
+    const tables = sections.filter((s) => itemKind(s) === 'table');
+    const tableGroups = {};
+    for (const t of tables) {
+      const key = tableSizeKey(t.tableW, t.tableH);
+      tableGroups[key] = (tableGroups[key] || 0) + 1;
+    }
+    const tableKeys = Object.keys(tableGroups).sort();
+    const tableLines = tableKeys.length
+      ? tableKeys.map((k) => `  ${k} м: <strong>${tableGroups[k]}</strong> шт`).join('<br>')
+      : '  <span style="opacity:.7">—</span>';
+    const len27 = n27 * 2.7;
+    const len18 = n18 * 1.8;
+    const perTier27 = n27 * 3;
+    const perTier18 = n18 * 2;
+    const perTierTotal = perTier27 + perTier18;
+    const totalAll = perTierTotal * tiers;
+    const tierWord = tiers === 1 ? '1 ярус' : `${tiers} яруса`;
+
+    const aisleInfo = showAisle
+      ? `<div>Проход: y <strong>${fmt(aisleY)}</strong> … <strong>${fmt(aisleY + AISLE_H)}</strong></div>`
+      : '';
+    statsEl.innerHTML =
+      `<div>Секций 2,7 м: <strong>${n27}</strong> (суммарная длина <strong>${len27.toFixed(1).replace('.', ',')} м</strong>)</div>` +
+      `<div>Секций 1,8 м: <strong>${n18}</strong> (суммарная длина <strong>${len18.toFixed(1).replace('.', ',')} м</strong>)</div>` +
+      `<div>Всего: <strong>${n27 + n18}</strong> секций</div>` +
+      `<div class="object-stats">Стеллажей 60×100: <strong>${nShelf}</strong></div>` +
+      `<div class="object-stats">Столы:<br>${tableLines}<br>Всего столов: <strong>${tables.length}</strong></div>` +
+      aisleInfo +
+      `<div>Зон ГП: <strong>${gpZones.filter((z) => zoneKind(z) === 'gp').length}</strong> · варки: <strong>${gpZones.filter((z) => zoneKind(z) === 'brew').length}</strong> · произв.: <strong>${gpZones.filter((z) => zoneKind(z) === 'custom').length}</strong></div>` +
+      (selectedZoneId
+        ? (() => {
+            const z = gpZones.find((x) => x.id === selectedZoneId);
+            if (!z) return '';
+            const dim = zoneDimText(z);
+            const kind = zoneKind(z);
+            if (kind === 'brew') {
+              return `<div style="margin-top:0.4rem">Зона варки #${z.id}: <strong>${dim}</strong></div>`;
+            }
+            if (kind === 'custom') {
+              return `<div style="margin-top:0.4rem">${z.label || 'Новая зона'} #${z.id}: <strong>${dim}</strong></div>`;
+            }
+            const cap = gpZoneEuroCapacity(z);
+            return `<div style="margin-top:0.4rem">Зона ГП #${z.id}: <strong>${dim}</strong> · европалет <strong>${cap.count}</strong> (ориент. ${cap.orientation})</div>`;
+          })()
+        : selectedIds.size > 0
+          ? (() => {
+              const sid = getPrimarySelectedId();
+              const sel = sections.find((s) => s.id === sid);
+              let html = `<div style="margin-top:0.4rem">Выбран: ${selectedItemLabel(sel)}</div>`;
+              if (selectedIds.size > 1) {
+                html += `<div>Мультивыбор: <strong>${selectedIds.size}</strong> объектов</div>`;
+              }
+              if (sel?.groupId) {
+                const n = getGroupMembers(sel.groupId).length;
+                html += `<div style="color:#6d28d9">Группа: <strong>${n}</strong> объектов</div>`;
+              }
+              return html;
+            })()
+          : '');
+
+    palletStatsEl.innerHTML =
+      `<div>Секций 2,7 м: <strong>${n27}</strong> → <strong>${perTier27}</strong> мест/ярус</div>` +
+      `<div>Секций 1,8 м: <strong>${n18}</strong> → <strong>${perTier18}</strong> мест/ярус</div>` +
+      `<div>Итого на 1 ярус: <strong>${perTierTotal}</strong></div>` +
+      `<div class="pallet-total">Итого (${tierWord}): <strong>${totalAll}</strong></div>`;
+  }
+
+  function render() {
+    while (world.firstChild) world.removeChild(world.firstChild);
+
+    const floor = el('rect', {
+      x: 0, y: 0, width: px(ROOM_W), height: px(ROOM_H),
+      fill: '#ffffff', stroke: '#334155', 'stroke-width': 2
+    });
+    world.appendChild(floor);
+    world.appendChild(renderZoneLabels());
+
+    if (showAisle) {
+      const ag = el('g', {
+        class: 'aisle',
+        'data-drag': printMode ? '' : 'aisle',
+        style: printMode ? 'pointer-events:none' : 'cursor:ns-resize'
+      });
+      ag.appendChild(el('rect', {
+        x: 0, y: px(aisleY), width: px(ROOM_W), height: px(AISLE_H),
+        fill: 'rgba(148,163,184,0.35)', stroke: '#94a3b8', 'stroke-width': 1,
+        'stroke-dasharray': '6 4'
+      }));
+      ag.appendChild(el('text', {
+        x: px(ROOM_W / 2), y: px(aisleY + AISLE_H / 2) + 5,
+        'text-anchor': 'middle', 'font-size': 13, fill: '#475569', 'font-weight': '600'
+      }, 'проход 1,5 м'));
+      world.appendChild(ag);
+    }
+
+    world.appendChild(renderGpZonesLayer());
+
+    for (const s of sections) {
+      const sel = !printMode && isSectionSelected(s.id);
+      const printSel = isPrintTargetSelected('section', s.id);
+      const dimPickSel = isDimPickTarget('section', s.id);
+      let secClass = 'section';
+      if (sel) secClass += ' selected';
+      if (printSel) secClass += ' print-target-sel';
+      if (dimPickSel) secClass += ' print-dim-pick';
+      const g = el('g', {
+        class: secClass,
+        'data-id': s.id,
+        style: printMode ? 'cursor:crosshair' : 'cursor:move'
+      });
+      let stroke = '#1e293b';
+      let sw = 2;
+      if (sel) { stroke = '#f59e0b'; sw = 3; }
+      if (printSel) { stroke = '#2563eb'; sw = 3; }
+      if (dimPickSel) { stroke = '#2563eb'; sw = 2.5; }
+      g.appendChild(el('rect', {
+        x: px(s.x), y: px(s.y), width: px(s.w), height: px(s.h),
+        fill: s.color[0], stroke,
+        'stroke-width': sw
+      }));
+      if (isMezzanineSection(s)) {
+        if (s.rotation === 90) {
+          const midX = px(s.x + s.w / 2);
+          g.appendChild(el('line', {
+            x1: midX, y1: px(s.y), x2: midX, y2: px(s.y + s.h),
+            stroke: '#fff', 'stroke-width': 1, 'stroke-dasharray': '5 3', opacity: 0.7
+          }));
+        } else {
+          const midY = px(s.y + s.h / 2);
+          g.appendChild(el('line', {
+            x1: px(s.x), y1: midY, x2: px(s.x + s.w), y2: midY,
+            stroke: '#fff', 'stroke-width': 1, 'stroke-dasharray': '5 3', opacity: 0.7
+          }));
+        }
+      }
+      const labelFill = itemKind(s) === 'table' ? '#134e4a' : '#fff';
+      const maxLabel = itemKind(s) === 'shelf' ? 11 : 14;
+      const textFill = resolveSegmentColor(labelFill, s.textColor);
+      appendObjectText(g, s.x, s.y, s.w, s.h,
+        labelToTextSegments(s.label, s.w, s.h, maxLabel, textFill, 700, 3),
+        getObjectTextScale(s), getObjectTextOrient(s));
+      if (printMode) {
+        g.appendChild(el('rect', {
+          class: 'print-hit',
+          x: px(s.x), y: px(s.y), width: px(s.w), height: px(s.h),
+          fill: 'transparent', stroke: 'none'
+        }));
+      }
+      world.appendChild(g);
+    }
+
+    const groupOutline = renderGroupOutline();
+    if (groupOutline && !printMode) world.appendChild(groupOutline);
+
+    const handlesLayer = renderGpZoneHandles();
+    if (handlesLayer && !printMode) world.appendChild(handlesLayer);
+
+    const snapLayer = renderSnapGuides();
+    if (snapLayer && !printMode) world.appendChild(snapLayer);
+
+    const dimG = el('g', { id: 'room-dims', 'font-size': 12, fill: '#475569' });
+    dimG.appendChild(el('text', {
+      x: px(ROOM_W / 2), y: px(ROOM_H) + 38, 'text-anchor': 'middle', 'font-weight': '600'
+    }, '24,9 м →'));
+    dimG.appendChild(el('text', {
+      x: -38, y: px(ROOM_H / 2), 'text-anchor': 'middle', 'font-weight': '600',
+      transform: `rotate(-90 -38 ${px(ROOM_H / 2)})`
+    }, '10,3 м ↓'));
+    world.appendChild(dimG);
+
+    if (printMode) {
+      world.appendChild(renderManualDimensions());
+    }
+
+    const distObj = !printMode ? objectForDistances() : null;
+    if (distObj) {
+      const planItem = sections.find((s) => s.id === distObj.id);
+      if (planItem) {
+        world.appendChild(renderDistances(
+          rectForDistances(distObj),
+          distanceExcludeIds(distObj),
+          null
+        ));
+      } else {
+        world.appendChild(renderDistances(zoneRect(distObj), null, distObj.id));
+      }
+    }
+
+    updateStats();
+    updateSelectionInfo();
+    updateZoneEditUI();
+
+    if (!isPrinting) {
+      if (printMode) applyViewBoxForPrint();
+      else applyViewBox();
+    }
+    updateDeleteButton();
+    updateDeleteDimButton();
+  }
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (printMode) {
+      if (e.button === 1) {
+        e.preventDefault();
+        startPan(e);
+        return;
+      }
+      if (spacePan && e.button === 0) {
+        e.preventDefault();
+        startPan(e);
+        return;
+      }
+      const target = pickTargetFromEvent(e);
+      if (target && dimToolActive && (target.type === 'section' || target.type === 'zone')) {
+        e.preventDefault();
+        handleDimClick(target);
+        return;
+      }
+      if (target && !dimToolActive) {
+        e.preventDefault();
+        selectPrintTarget(target, e.ctrlKey || e.metaKey || e.shiftKey);
+        render();
+        return;
+      }
+      if (e.button === 0 && (e.target === svg || e.target.closest('#world > rect[fill="#ffffff"]'))) {
+        clearPrintSelection();
+        dimPick = null;
+        updateDimHint();
+        render();
+        startPan(e);
+      }
+      return;
+    }
+
+    const resizeHandle = e.target.closest('[data-resize][data-zone-id]');
+    const zoneEl = e.target.closest('[data-zone-id]');
+    const t = e.target.closest('[data-id], [data-drag]');
+    if (!t && !zoneEl && !resizeHandle) {
+      if (e.target === svg || e.target.closest('#world > rect[fill="#ffffff"]')) {
+        clearSelection();
+        render();
+      }
+      if (e.button === 0 && !t && !zoneEl) {
+        pan = { x0: e.clientX, y0: e.clientY, panX0: view.panX, panY0: view.panY };
+        viewport.classList.add('panning');
+      }
+      return;
+    }
+    e.preventDefault();
+    const w0 = clientToWorld(e.clientX, e.clientY);
+    const mx0 = w0.x / SCALE;
+    const my0 = w0.y / SCALE;
+
+    if (resizeHandle) {
+      const z = gpZones.find((x) => x.id === Number(resizeHandle.dataset.zoneId));
+      if (!z) return;
+      selectZone(z.id);
+      drag = {
+        type: 'zone-resize',
+        id: z.id,
+        corner: resizeHandle.dataset.resize,
+        orig: { x: z.x, y: z.y, w: z.w, h: z.h }
+      };
+      resizeHandle.setPointerCapture(e.pointerId);
+      render();
+      return;
+    }
+
+    if (zoneEl && zoneEl.dataset.zoneId) {
+      const z = gpZones.find((x) => x.id === Number(zoneEl.dataset.zoneId));
+      if (!z) return;
+      selectZone(z.id);
+      drag = {
+        type: 'zone',
+        id: z.id,
+        dx: mx0 - z.x,
+        dy: my0 - z.y
+      };
+      zoneEl.setPointerCapture(e.pointerId);
+      render();
+      return;
+    }
+
+    if (t.dataset.drag === 'aisle') {
+      drag = { type: 'aisle', oy: w0.y / SCALE - aisleY };
+      t.setPointerCapture(e.pointerId);
+    } else {
+      const s = sections.find((x) => x.id === Number(t.dataset.id));
+      if (!s) return;
+      handleSectionPointerSelect(s.id, e);
+      if (e.ctrlKey || e.metaKey || e.shiftKey) {
+        render();
+        return;
+      }
+      const members = dragMembersForSection(s);
+      drag = {
+        type: 'section',
+        id: s.id,
+        dx: mx0 - s.x,
+        dy: my0 - s.y,
+        groupIds: members.map((m) => m.id),
+        orig: members.map((m) => ({ id: m.id, x: m.x, y: m.y }))
+      };
+      t.setPointerCapture(e.pointerId);
+      render();
+    }
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    if (pan) {
+      const r = svg.getBoundingClientRect();
+      const vb = getViewBox();
+      const dx = (e.clientX - pan.x0) / r.width * vb.w;
+      const dy = (e.clientY - pan.y0) / r.height * vb.h;
+      view.panX = pan.panX0 - dx;
+      view.panY = pan.panY0 - dy;
+      if (printMode) applyViewBoxForPrint();
+      else applyViewBox();
+      return;
+    }
+    if (printMode || !drag) return;
+    const w = clientToWorld(e.clientX, e.clientY);
+    const mx = w.x / SCALE;
+    const my = w.y / SCALE;
+
+    if (drag.type === 'aisle') {
+      aisleY = Math.max(0, Math.min(ROOM_H - AISLE_H, my - drag.oy));
+      render();
+      return;
+    }
+
+    if (drag.type === 'zone') {
+      const z = gpZones.find((x) => x.id === drag.id);
+      if (!z) return;
+      z.x = mx - drag.dx;
+      z.y = my - drag.dy;
+      clampZone(z);
+      applyGridSnapZone(z);
+      applySnapZone(z, z.id);
+      render();
+      return;
+    }
+
+    if (drag.type === 'zone-resize') {
+      const z = gpZones.find((x) => x.id === drag.id);
+      if (!z) return;
+      resizeZoneByCorner(z, drag.corner, mx, my, drag.orig);
+      applyGridSnapZone(z);
+      applySnapZone(z, z.id);
+      render();
+      return;
+    }
+
+    if (drag.type === 'section') {
+      positionSectionDrag(drag, mx, my);
+      render();
+      return;
+    }
+  });
+
+  function endPointer(e) {
+    if (printMode && pan) {
+      pan = null;
+      viewport.classList.remove('panning');
+      return;
+    }
+    if (printMode) return;
+    const wasDrag = drag;
+    if (drag?.type === 'section') {
+      const w = clientToWorld(e.clientX, e.clientY);
+      positionSectionDrag(drag, w.x / SCALE, w.y / SCALE);
+      snapGuides = null;
+    } else if (drag?.type === 'zone' || drag?.type === 'zone-resize') {
+      const z = gpZones.find((x) => x.id === drag.id);
+      if (z) {
+        applyGridSnapZone(z);
+        applySnapZone(z, z.id);
+        snapGuides = null;
+      }
+    } else {
+      snapGuides = null;
+    }
+    drag = null;
+    pan = null;
+    viewport.classList.remove('panning');
+    if (wasDrag?.type === 'section' || wasDrag?.type === 'aisle'
+        || wasDrag?.type === 'zone' || wasDrag?.type === 'zone-resize') saveState();
+    render();
+  }
+
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', endPointer);
+
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    if (printMode) {
+      zoomAt(e.clientX, e.clientY, factor);
+      return;
+    }
+    view.zoom = Math.max(0.35, Math.min(8, view.zoom * factor));
+    applyViewBox();
+  }, { passive: false });
+
+  viewport.addEventListener('auxclick', (e) => {
+    if (e.button === 1) e.preventDefault();
+  });
+
+  document.getElementById('add27').onclick = () => addSection(2.7);
+  document.getElementById('add18').onclick = () => addSection(1.8);
+  document.getElementById('addShelf').onclick = () => addShelf();
+  document.getElementById('addTable').onclick = () => addTable();
+  document.getElementById('addGp').onclick = () => addGpZone();
+  document.getElementById('addBrew').onclick = () => addBrewZone();
+  document.getElementById('addCustom').onclick = () => addCustomZone();
+  document.getElementById('rotate').onclick = () => rotateSelected();
+  document.getElementById('linkAdjacent').onclick = () => linkAdjacentFromSelection();
+  document.getElementById('linkSelected').onclick = () => linkSelectedObjects();
+  document.getElementById('ungroup').onclick = () => ungroupSelected();
+  document.getElementById('ungroupAll').onclick = () => ungroupAll();
+  deleteBtn.onclick = () => deleteSelected();
+  document.getElementById('fit').onclick = fitToScreen;
+  document.getElementById('reset').onclick = () => {
+    if ((sections.length || gpZones.length)
+        && !confirm('Удалить все объекты (секции, стеллажи, столы) и зоны (ГП, варки, произв.)?')) return;
+    sections = [];
+    gpZones = [];
+    printAnnotations = [];
+    nextAnnotationId = 1;
+    clearSelection();
+    aisleY = DEFAULT_AISLE_Y;
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+  };
+  document.getElementById('showAisle').onchange = (e) => {
+    showAisle = e.target.checked;
+    render();
+  };
+  document.getElementById('gridSnap').onchange = (e) => {
+    gridSnapOn = e.target.checked;
+    saveState();
+  };
+  document.getElementById('snap').onchange = (e) => {
+    snapOn = e.target.checked;
+    saveState();
+  };
+  tiersSelect.onchange = (e) => {
+    tiers = Number(e.target.value) === 1 ? 1 : 2;
+    saveState();
+    render();
+  };
+
+  document.getElementById('saveFile').onclick = () => exportToFile();
+  document.getElementById('openFile').onclick = () => {
+    if ((sections.length || gpZones.length || printAnnotations.length)
+        && !confirm('Загрузить файл? Текущая схема будет заменена.')) return;
+    document.getElementById('fileInput').click();
+  };
+  document.getElementById('fileInput').onchange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) importFromFile(file);
+    e.target.value = '';
+  };
+  document.getElementById('togglePrint').onclick = () => setPrintMode(!printMode);
+  document.getElementById('exitPrint').onclick = () => setPrintMode(false);
+  document.getElementById('addDim').onclick = () => toggleDimTool();
+  document.getElementById('deleteDim').onclick = () => deleteSelectedAnnotation();
+  document.getElementById('doPrint').onclick = () => {
+    savedPrintView = { panX: view.panX, panY: view.panY, zoom: view.zoom };
+    isPrinting = true;
+    applyViewBoxFullRoom();
+    render();
+    window.print();
+  };
+  document.getElementById('printZoomOut').onclick = () => {
+    const r = svg.getBoundingClientRect();
+    zoomAt(r.left + r.width / 2, r.top + r.height / 2, 0.9);
+  };
+  document.getElementById('printZoomIn').onclick = () => {
+    const r = svg.getBoundingClientRect();
+    zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.1);
+  };
+  document.getElementById('printViewReset').onclick = () => fitToPrint();
+  window.addEventListener('beforeprint', () => {
+    if (!savedPrintView) {
+      savedPrintView = { panX: view.panX, panY: view.panY, zoom: view.zoom };
+    }
+    isPrinting = true;
+    applyViewBoxFullRoom();
+    render();
+  });
+  window.addEventListener('afterprint', () => {
+    isPrinting = false;
+    if (savedPrintView) {
+      view = { ...savedPrintView };
+      savedPrintView = null;
+    }
+    if (printMode) applyViewBoxForPrint();
+    else applyViewBox();
+  });
+  document.getElementById('textSizeDown').onclick = () => adjustSelectedTextScale(-0.1);
+  document.getElementById('textSizeUp').onclick = () => adjustSelectedTextScale(0.1);
+  document.getElementById('textOrientH').onclick = () => setSelectedTextOrient('h');
+  document.getElementById('textOrientVL').onclick = () => setSelectedTextOrient('vl');
+  document.getElementById('textOrientVR').onclick = () => setSelectedTextOrient('vr');
+  document.getElementById('textOrientToggle').onclick = () => toggleSelectedTextOrient();
+  document.getElementById('editTextOrientH').onclick = () => setSelectedTextOrient('h');
+  document.getElementById('editTextOrientVL').onclick = () => setSelectedTextOrient('vl');
+  document.getElementById('editTextOrientVR').onclick = () => setSelectedTextOrient('vr');
+  document.getElementById('editTextOrientToggle').onclick = () => toggleSelectedTextOrient();
+  document.getElementById('textColorBlack').onclick = () => setSelectedTextColor('#000000');
+  document.getElementById('textColorReset').onclick = () => resetSelectedTextColor();
+  document.getElementById('editTextColorBlack').onclick = () => setSelectedTextColor('#000000');
+  document.getElementById('editTextColorReset').onclick = () => resetSelectedTextColor();
+
+  function wireZoneLabelInput(id, getZoneFn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const z = getZoneFn();
+      if (!z) return;
+      z.label = input.value;
+      render();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const z = getZoneFn();
+        if (z) setCustomZoneLabel(z, input.value);
+        input.blur();
+      }
+    });
+    input.addEventListener('blur', () => {
+      const z = getZoneFn();
+      if (z) setCustomZoneLabel(z, input.value);
+    });
+  }
+
+  function wireZoneColorInput(id, getZoneFn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const z = getZoneFn();
+      if (!z) return;
+      applyCustomZoneColor(z, input.value);
+    });
+  }
+
+  wireZoneLabelInput('zoneLabelInput', getSelectedCustomZone);
+  wireZoneLabelInput('printZoneLabelInput', getPrimaryCustomPrintZone);
+  wireZoneColorInput('zoneColorPicker', getSelectedCustomZone);
+  wireZoneColorInput('printZoneColorPicker', getPrimaryCustomPrintZone);
+  initColorPresets();
+
+  svg.addEventListener('dblclick', (e) => {
+    if (printMode) return;
+    const zoneEl = e.target.closest('[data-zone-id]');
+    if (!zoneEl || e.target.closest('[data-resize]')) return;
+    const z = gpZones.find((x) => x.id === Number(zoneEl.dataset.zoneId));
+    if (!z || zoneKind(z) !== 'custom') return;
+    e.preventDefault();
+    selectZone(z.id);
+    render();
+    focusZoneLabelInput();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea, select')) return;
+    if (printMode && e.code === 'Space' && !e.repeat) {
+      e.preventDefault();
+      spacePan = true;
+      document.body.classList.add('space-pan');
+      return;
+    }
+    if (printMode && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (dimPick) {
+        e.preventDefault();
+        dimPick = null;
+        updateDimHint();
+        render();
+        return;
+      }
+      if (!dimToolActive && selectedAnnotationId != null) {
+        e.preventDefault();
+        deleteSelectedAnnotation();
+        return;
+      }
+    }
+    if (printMode && e.key === 'Escape') {
+      if (dimToolActive || dimPick) {
+        dimToolActive = false;
+        dimPick = null;
+        document.body.classList.remove('dim-tool');
+        document.getElementById('addDim').classList.remove('primary');
+        updateDimHint();
+        render();
+      } else if (selectedPrintTargets.size) {
+        clearPrintSelection();
+        render();
+      }
+      return;
+    }
+    if (printMode) return;
+    if ((e.key === 'Delete' || e.key === 'Backspace')
+        && (selectedIds.size > 0 || selectedZoneId != null)) {
+      e.preventDefault();
+      deleteSelected();
+    }
+    if ((e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К')
+        && selectedIds.size > 0 && selectedZoneId == null) {
+      e.preventDefault();
+      rotateSelected();
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.code !== 'Space' || !printMode) return;
+    spacePan = false;
+    document.body.classList.remove('space-pan');
+  });
+
+  window.addEventListener('resize', () => {
+    applyViewBox();
+  });
+  loadState();
+  updatePrintTextLabel();
+  updateTextOrientUI();
+  updateTextColorUI();
+  fitToScreen();
+  render();
+})();
+  </script>
+</body>
+</html>

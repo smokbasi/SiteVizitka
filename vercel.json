@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    { "source": "/vizitka", "destination": "/vizitka/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/tools/planogram", "destination": "/tools/planogram/index.html" },
+    { "source": "/vizitka/", "destination": "/vizitka/index.html" }
+  ]
+}

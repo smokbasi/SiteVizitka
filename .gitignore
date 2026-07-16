@@ -1,4 +1,10 @@
 .claude/
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+.claude-flow/neural/
+.swarm/
 .superpowers/
 .DS_Store
 Thumbs.db
+.vercel
