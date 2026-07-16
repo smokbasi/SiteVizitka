@@ -25,14 +25,14 @@
     gradientInner: 'rgba(91, 141, 239, 0.14)',
     gradientOuter: 'rgba(15, 17, 23, 0)',
     interactionRadius: 360,
-    interactionStrength: 0.58,
-    spring: 0.04,
+    interactionStrength: 0.78,
+    spring: 0.065,
     springRadial: null,
-    springRadialInward: 0.015,
-    springTangential: 0.016,
-    yRepulsionBoost: 2.0,
-    damping: 0.82,
-    mouseSmoothing: 0.12,
+    springRadialInward: 0.028,
+    springTangential: 0.032,
+    yRepulsionBoost: 2.2,
+    damping: 0.88,
+    mouseSmoothing: 0.26,
   };
 
   function rand(min, max) {
