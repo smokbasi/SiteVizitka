@@ -52,13 +52,13 @@
     iridescenceHitRadiusMul: 0.55,
     iridescenceStartMs: 475,
     iridescencePhaseSpeed: 0.0028,
-    clusterDotCount: 28,
+    clusterDotCount: 20,
     ambientCycleMinMs: 4200,
     ambientCycleMaxMs: 7600,
     ambientLayerAmplitude: 0.82,
     ambientLayerLerp: 0.038,
     ambientPromoteBlend: 0.9,
-    midNodeMaxPerLine: 2,
+    midNodeMaxPerLine: 1,
     midNodeMinT: 0.15,
     midNodeMaxT: 0.45,
     neighborRepulsionRadius: 44,
@@ -133,9 +133,9 @@
     var span = maxLen - minLen || 1;
     var shortness = 1 - (lengthFactor - minLen) / span;
     var roll = Math.random();
-    if (shortness > 0.55 && roll < 0.82) return Math.min(2, maxPerLine);
-    if (shortness > 0.28 && roll < 0.58) return 1;
-    if (roll < 0.22) return 1;
+    if (shortness > 0.55 && roll < 0.57) return maxPerLine;
+    if (shortness > 0.28 && roll < 0.41) return 1;
+    if (roll < 0.15) return 1;
     return 0;
   }
 
@@ -182,7 +182,15 @@
   }
 
   BurstNetwork.prototype._makeMidNode = function (t) {
-    return { t: t, x: 0, y: 0, vx: 0, vy: 0 };
+    return { t: t };
+  };
+
+  BurstNetwork.prototype._midPointOnLine = function (line, mid) {
+    var origin = this.origin;
+    return {
+      x: origin.x + (line.x - origin.x) * mid.t,
+      y: origin.y + (line.y - origin.y) * mid.t,
+    };
   };
 
   BurstNetwork.prototype._buildLines = function () {
@@ -289,14 +297,6 @@
     line.y = rest.y;
     line.vx = 0;
     line.vy = 0;
-    for (var m = 0; m < line.midNodes.length; m++) {
-      var midRest = this._restMidPoint(line, line.midNodes[m]);
-      var mid = line.midNodes[m];
-      mid.x = midRest.x;
-      mid.y = midRest.y;
-      mid.vx = 0;
-      mid.vy = 0;
-    }
   };
 
   BurstNetwork.prototype._resetClusterDot = function (dot) {
@@ -310,15 +310,6 @@
   BurstNetwork.prototype._restPoint = function (line) {
     var span = Math.min(this.width, this.height);
     var len = span * line.lengthFactor;
-    return {
-      x: this.origin.x + Math.cos(line.angle) * len,
-      y: this.origin.y + Math.sin(line.angle) * len,
-    };
-  };
-
-  BurstNetwork.prototype._restMidPoint = function (line, mid) {
-    var span = Math.min(this.width, this.height);
-    var len = span * line.lengthFactor * mid.t;
     return {
       x: this.origin.x + Math.cos(line.angle) * len,
       y: this.origin.y + Math.sin(line.angle) * len,
@@ -511,17 +502,13 @@
     var ir = line.iridescence;
     var phase = this.iridescencePhase;
     var mids = line.midNodes;
-    var prevX = origin.x;
-    var prevY = origin.y;
+
+    this._strokeSegment(origin.x, origin.y, line.x, line.y, style, ir, phase, lineAlpha);
 
     for (var m = 0; m < mids.length; m++) {
-      this._strokeSegment(prevX, prevY, mids[m].x, mids[m].y, style, ir, phase, lineAlpha * 0.92);
-      this._drawNode(mids[m].x, mids[m].y, style, ir, phase, nodeAlpha, 0.88);
-      prevX = mids[m].x;
-      prevY = mids[m].y;
+      var midPt = this._midPointOnLine(line, mids[m]);
+      this._drawNode(midPt.x, midPt.y, style, ir, phase, nodeAlpha, 0.88);
     }
-
-    this._strokeSegment(prevX, prevY, line.x, line.y, style, ir, phase, lineAlpha);
 
     if (line.hasNode) {
       this._drawNode(line.x, line.y, style, ir, phase, nodeAlpha, 1);
@@ -529,11 +516,9 @@
   };
 
   BurstNetwork.prototype._drawClusterDot = function (dot) {
-    var origin = this.origin;
     var style = styleForLayer(dot.visualLayer);
     var ir = dot.iridescence;
     var phase = this.iridescencePhase;
-    this._strokeSegment(origin.x, origin.y, dot.x, dot.y, style, ir, phase, style.lineOpacity * 0.85);
     this._drawNode(dot.x, dot.y, style, ir, phase, style.nodeOpacity, 0.78);
   };
 
@@ -542,14 +527,10 @@
     pts.length = 0;
     var i;
     var line;
-    var m;
 
     for (i = 0; i < this.lines.length; i++) {
       line = this.lines[i];
       pts.push({ pt: line, layer: line.visualLayer, kind: 'end' });
-      for (m = 0; m < line.midNodes.length; m++) {
-        pts.push({ pt: line.midNodes[m], layer: line.visualLayer, kind: 'mid', parent: line });
-      }
     }
     for (i = 0; i < this.clusterDots.length; i++) {
       pts.push({ pt: this.clusterDots[i], layer: this.clusterDots[i].visualLayer, kind: 'cluster' });
@@ -619,7 +600,6 @@
     var interact = !this.reducedMotion && this.mouse.active;
     var i;
     var line;
-    var m;
 
     for (i = 0; i < this.lines.length; i++) {
       line = this.lines[i];
@@ -632,18 +612,6 @@
       line.vy *= opts.damping;
       line.x += line.vx;
       line.y += line.vy;
-
-      for (m = 0; m < line.midNodes.length; m++) {
-        var mid = line.midNodes[m];
-        var midRest = this._restMidPoint(line, mid);
-        if (interact) this._applyMouseRepulsion(mid, mx, my);
-        this._applyEdgeMotion(line, nowMs);
-        this._applySpring(mid, midRest);
-        mid.vx *= opts.damping;
-        mid.vy *= opts.damping;
-        mid.x += mid.vx;
-        mid.y += mid.vy;
-      }
     }
 
     for (i = 0; i < this.clusterDots.length; i++) {
