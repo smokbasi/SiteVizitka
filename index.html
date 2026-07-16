@@ -3,324 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Никита Милашевич — разработчик. Инструменты для производства, ERP и бизнес-автоматизации.">
+  <meta name="description" content="Никита Милашевич — разработчик производственной автоматизации, сервисов для маркировки, учёта и управленческой аналитики.">
   <meta name="theme-color" content="#0f1117">
   <title>Никита Милашевич — Разработчик</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0f1117;
-      --surface: #181b24;
-      --surface-2: #1e2230;
-      --border: #2a2f3d;
-      --text: #e8eaef;
-      --muted: #8b93a7;
-      --accent: #5b8def;
-      --accent-hover: #7aa3f5;
-      --green: #34d399;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: "Inter", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.6;
-      background-image:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(91, 141, 239, 0.12), transparent),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(52, 211, 153, 0.06), transparent);
-    }
-    .wrap {
-      width: 100%;
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 2.5rem 1.25rem 3rem;
-    }
-    .hero {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-    .hero__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-    .hero__dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
-    }
-    .hero__name {
-      font-size: clamp(2rem, 6vw, 2.75rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.35rem;
-    }
-    .hero__role {
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--accent);
-      margin-bottom: 0.75rem;
-    }
-    .hero__tagline {
-      color: var(--muted);
-      font-size: 1.05rem;
-      max-width: 34ch;
-      margin: 0 auto 1.75rem;
-    }
-    .hero__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      padding: 0.7rem 1.25rem;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
-    }
-    .btn--primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn--primary:hover { background: var(--accent-hover); }
-    .btn--ghost {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
-    .section {
-      margin-bottom: 3rem;
-    }
-    .section__title {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-    .prose {
-      color: var(--text);
-      font-size: 0.95rem;
-    }
-    .prose p + p { margin-top: 0.85rem; }
-    .prose strong { font-weight: 600; color: #fff; }
-    .grid {
-      display: grid;
-      gap: 1rem;
-    }
-    @media (min-width: 580px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-    }
-    .card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.65rem;
-      padding: 1.35rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-    }
-    a.card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    }
-    .card--static { cursor: default; }
-    .card--static:hover {
-      transform: none;
-      box-shadow: none;
-      border-color: var(--border);
-    }
-    .card__icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-    }
-    .card__icon--blue { background: rgba(91, 141, 239, 0.15); }
-    .card__icon--green { background: rgba(52, 211, 153, 0.15); }
-    .card__icon--amber { background: rgba(251, 191, 36, 0.15); }
-    .card__icon--violet { background: rgba(167, 139, 250, 0.15); }
-    .card__title {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .card__desc {
-      font-size: 0.84rem;
-      color: var(--muted);
-      line-height: 1.55;
-      flex: 1;
-    }
-    .card__link {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--accent);
-    }
-    a.card:hover .card__link { color: var(--accent-hover); }
-    .card__tag {
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .cta {
-      text-align: center;
-      padding: 2rem 1.5rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-bottom: 2.5rem;
-    }
-    .cta__title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-    .cta__text {
-      color: var(--muted);
-      font-size: 0.92rem;
-      margin-bottom: 1.25rem;
-      max-width: 40ch;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .cta__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-    .contacts {
-      text-align: center;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-    .contacts__line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1.25rem;
-      justify-content: center;
-      font-size: 0.88rem;
-      margin-bottom: 1rem;
-    }
-    .contacts a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-    .contacts a:hover { color: var(--accent-hover); text-decoration: underline; }
-    .contacts__sep { color: var(--border); }
-    .footer-note {
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    .anchor-target { scroll-margin-top: 1.5rem; }
-
-    /* ── Burst hero ── */
-    .hero-burst {
-      position: relative;
-      width: 100vw;
-      margin-left: calc(50% - 50vw);
-      margin-bottom: 2.5rem;
-      overflow: hidden;
-      background: var(--bg);
-    }
-    .hero-burst__stage {
-      position: relative;
-      width: 100%;
-      height: clamp(280px, 42vw, 420px);
-      touch-action: none;
-    }
-    .hero-burst__canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      cursor: default;
-      pointer-events: none;
-    }
-    .hero-burst__content {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.25rem;
-      text-align: center;
-      pointer-events: none;
-      margin-bottom: 0;
-    }
-    .hero-burst__content .hero__actions,
-    .hero-burst__content .hero__actions a {
-      pointer-events: auto;
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-    }
-    @media (min-width: 580px) {
-      .stats { grid-template-columns: repeat(4, 1fr); }
-    }
-    .stats__item {
-      padding: 1.35rem 1rem;
-      text-align: center;
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    @media (min-width: 580px) {
-      .stats__item { border-bottom: none; }
-    }
-    .stats__item:nth-child(2n) { border-right: none; }
-    @media (min-width: 580px) {
-      .stats__item { border-right: 1px solid var(--border); }
-      .stats__item:last-child { border-right: none; }
-    }
-    .stats__value {
-      font-size: clamp(1.35rem, 3.5vw, 1.75rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: #fff;
-      margin-bottom: 0.2rem;
-    }
-    .stats__label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/portfolio.css">
 </head>
 <body>
   <div class="wrap">
@@ -328,14 +17,15 @@
       <div class="hero-burst__stage">
         <canvas class="hero-burst__canvas" id="burst-canvas" aria-hidden="true"></canvas>
         <header class="hero hero-burst__content">
-        <div class="hero__badge"><span class="hero__dot" aria-hidden="true"></span> Портфолио</div>
-        <h1 class="hero__name">Никита Милашевич</h1>
-        <p class="hero__role">Разработчик</p>
-        <p class="hero__tagline">Пишу инструменты там, где бизнес теряет время на ручную работу</p>
-        <div class="hero__actions">
-          <a class="btn btn--primary" href="#projects">Смотреть проекты</a>
-          <a class="btn btn--ghost" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
-        </div>
+          <div class="hero__badge"><span class="hero__dot" aria-hidden="true"></span> Портфолио</div>
+          <h1 class="hero__name">Никита Милашевич</h1>
+          <p class="hero__role">Разработчик</p>
+          <p class="hero__lead">Сначала процесс на производстве — потом код.</p>
+          <p class="hero__tagline">Делаю инструменты для учёта, маркировки и управления производством: там, где люди до сих пор сводят данные вручную.</p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#projects">Смотреть проекты</a>
+            <a class="btn btn--ghost" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
+          </div>
         </header>
       </div>
       <div class="stats" aria-label="Ключевые показатели">
@@ -358,110 +48,207 @@
       </div>
     </section>
 
-    <section class="section" id="about">
-      <h2 class="section__title">Обо мне</h2>
-      <div class="prose">
-        <p>Четыре с половиной года руковожу производством — косметика, продукция для полости рта, парфюмерия. Видел изнутри, сколько решений принимается в Excel, а сколько времени уходит на одни и те же операции в ERP.</p>
-        <p>Три года назад начал писать код — сначала для своих задач на производстве, потом для заказчиков. Делаю веб-приложения, скрипты автоматизации и интеграции с учётными системами. Беру заказы на разработку.</p>
-        <p>Ниже — проекты, которые выросли из конкретных проблем: потерянные коды маркировки, ручное заполнение актов, планирование закупок, аналитика выпуска и премий. Каждый решает одну боль, а не «ещё один сервис».</p>
-      </div>
-    </section>
-
-    <section class="section anchor-target" id="projects">
-      <h2 class="section__title">Проекты</h2>
-      <div class="grid">
-        <a class="card" href="#doublemark">
-          <div class="card__icon card__icon--green" aria-hidden="true">🏷️</div>
-          <div class="card__title">DoubleMark</div>
-          <p class="card__desc">Коды «Честный Знак» теряются и повреждаются на линии — восстановление вручную занимает часы. SaaS для дублирования маркировки, сейчас в бета-тестировании.</p>
-          <span class="card__link">Подробнее →</span>
-        </a>
-
-        <a class="card" href="/tools/planogram">
-          <div class="card__icon card__icon--blue" aria-hidden="true">📐</div>
-          <div class="card__title">Редактор планограммы склада</div>
-          <p class="card__desc">Расстановка стеллажей на мезонине рисуется на бумаге и быстро устаревает. Интерактивный редактор: секции, проходы, печать и сохранение схемы.</p>
-          <span class="card__link">Открыть →</span>
-        </a>
-
-        <a class="card" href="#docs-automation">
-          <div class="card__icon card__icon--amber" aria-hidden="true">📄</div>
-          <div class="card__title">Автоматизация учётных документов</div>
-          <p class="card__desc">Акты МХ-1 и УПД заполнялись вручную из разных источников. Скрипты собирают данные из XML, Excel и МойСклад и подставляют коды маркировки автоматически.</p>
-          <span class="card__link">Подробнее →</span>
-        </a>
-
-        <a class="card" href="#procurement">
-          <div class="card__icon card__icon--violet" aria-hidden="true">📦</div>
-          <div class="card__title">Планирование закупок материалов</div>
-          <p class="card__desc">Заказ упаковки и сырья сводился вручную — без единой картины цен и остатков. Инструмент тянет данные из МойСклад и строит таблицу потребности с актуальными ценами.</p>
-          <span class="card__link">Подробнее →</span>
-        </a>
-
-        <a class="card" href="#raw-materials">
-          <div class="card__icon card__icon--blue" aria-hidden="true">🧪</div>
-          <div class="card__title">Каталоги и аналитика сырья</div>
-          <p class="card__desc">Сравнение поставщиков безспиртовых баз для парфюмерии занимало недели. Структурированные каталоги с верификацией состава, MOQ и цен по регионам.</p>
-          <span class="card__link">Подробнее →</span>
-        </a>
-
-        <div class="card card--static" id="production-analytics">
-          <div class="card__icon card__icon--green" aria-hidden="true">📊</div>
-          <div class="card__title">Производственная аналитика</div>
-          <p class="card__desc">Нормы выработки, себестоимость по линиям и премии считались вручную. Внутренний инструмент: аналитика остатков и продаж, планирование выпуска, автоматический расчёт премий по выработке.</p>
-          <span class="card__tag">Внутренний инструмент</span>
+    <main>
+      <section class="section" id="about">
+        <div class="section__heading">
+          <div>
+            <span class="section__eyebrow">Контекст</span>
+            <h2 class="section__title">Обо мне</h2>
+          </div>
         </div>
-      </div>
-    </section>
+        <div class="prose">
+          <p>Я 4,5 года руковожу производством в FMCG: косметика, уход за полостью рта, парфюмерия. В разработку пришёл из собственных задач на площадке: данные по остаткам, выпуску, себестоимости и премиям приходилось собирать из разных источников, чтобы получить общую картину и принять решение.</p>
+          <p>Три года пишу инструменты для производства и заказчиков: ботов, веб-дашборды, десктопные и серверные сервисы. Обычно задача выглядит так: данные о выпуске появляются в цехе, попадают в ERP и локальную базу, а руководитель видит выработку, остатки и отклонения без ручных сводок.</p>
+          <p>Сейчас развиваю производственную автоматизацию, цифровую маркировку и сервисы для подбора персонала.</p>
+          <p>Беру проекты в разработку. Если у вас есть процесс, который съедает время команды, — напишите, разберёмся, что в нём можно автоматизировать.</p>
+        </div>
+      </section>
 
-    <section class="section anchor-target" id="doublemark">
-      <h2 class="section__title">DoubleMark</h2>
-      <div class="prose">
-        <p><strong>DoubleMark</strong> — сервис для дублирования кодов маркировки «Честный Знак». Проблема знакома любому производителю: код повредился на линии или потерялся в партии — восстановление превращается в отдельную операцию с риском ошибок.</p>
-        <p>Сейчас проект на стадии бета-тестирования. Ищу производителей, готовых протестировать и дать обратную связь.</p>
-      </div>
-    </section>
+      <section class="section anchor-target" id="workflow">
+        <div class="section__heading">
+          <div>
+            <span class="section__eyebrow">Подход</span>
+            <h2 class="section__title">Как я работаю</h2>
+          </div>
+        </div>
+        <ol class="workflow-grid">
+          <li class="workflow-card">
+            <h3>Сначала смотрю на процесс</h3>
+            <p>Разбираюсь, как операция проходит сейчас: от склада и цеха до отчёта и решения руководителя. Часто проблема не в отсутствии интерфейса, а в повторном вводе данных, разрывах между системами и ручной аналитике: руководитель собирает цифры из нескольких источников, сводит их и только потом может принять решение.</p>
+          </li>
+          <li class="workflow-card">
+            <h3>Собираю первую рабочую версию на реальных сценариях</h3>
+            <p>Не рисую абстрактный MVP. Подключаю ERP, таблицы и внешние API, чтобы проверить решение на тех данных, с которыми команда работает каждый день.</p>
+          </li>
+          <li class="workflow-card">
+            <h3>Внедряю постепенно</h3>
+            <p>Сначала базовый учёт, затем автоматические операции и аналитика. Для критичных действий добавляю подтверждения и логи.</p>
+          </li>
+          <li class="workflow-card">
+            <h3>Довожу до рабочего окружения</h3>
+            <p>Разворачиваю сервис на VPS: Docker или systemd, nginx, TLS, мониторинг и резервное копирование данных.</p>
+          </li>
+          <li class="workflow-card">
+            <h3>Дорабатываю после запуска</h3>
+            <p>Слушаю операторов и руководителей. Если учёт нестабилен или интерфейс мешает работать, новые функции не имеют смысла.</p>
+          </li>
+        </ol>
+      </section>
 
-    <section class="section anchor-target" id="docs-automation">
-      <h2 class="section__title">Автоматизация учётных документов</h2>
-      <div class="prose">
-        <p>Набор скриптов для документооборота между производством и складским учётом: заполнение акта приёма-передачи МХ-1 из УПД, подстановка кодов номенклатуры МойСклад, вставка КИЗ из Excel в XML-файлы отгрузки.</p>
-        <p>Задача, которую раньше делали вручную по каждой партии, теперь выполняется за минуты.</p>
-      </div>
-    </section>
+      <section class="section anchor-target" id="projects">
+        <div class="section__heading">
+          <div>
+            <span class="section__eyebrow">Практика</span>
+            <h2 class="section__title">Проекты</h2>
+          </div>
+        </div>
+        <div class="grid">
+          <a class="card card--featured" href="#doublemark">
+            <div class="card__icon card__icon--green" aria-hidden="true">DM</div>
+            <div class="card__title">DoubleMark</div>
+            <p class="card__desc">Коды «Честный Знак» теряются и повреждаются на линии — восстановление вручную занимает часы. SaaS для дублирования маркировки, сейчас в бета-тестировании.</p>
+            <span class="card__link">Подробнее →</span>
+          </a>
 
-    <section class="section anchor-target" id="procurement">
-      <h2 class="section__title">Планирование закупок</h2>
-      <div class="prose">
-        <p>Интеграция с МойСклад: подтягивает позиции из заказов поставщику, сопоставляет с номенклатурой и формирует таблицу материалов с актуальными ценами и расчётом потребности. Используется для планирования закупок упаковки и комплектующих.</p>
-      </div>
-    </section>
+          <a class="card" href="/tools/planogram">
+            <div class="card__icon card__icon--blue" aria-hidden="true">PL</div>
+            <div class="card__title">Редактор планограммы склада</div>
+            <p class="card__desc">Расстановка стеллажей на мезонине рисуется на бумаге и быстро устаревает. Интерактивный редактор: секции, проходы, печать и сохранение схемы.</p>
+            <span class="card__link">Открыть →</span>
+          </a>
 
-    <section class="section anchor-target" id="raw-materials">
-      <h2 class="section__title">Каталоги сырья</h2>
-      <div class="prose">
-        <p>Исследовательские инструменты для закупки парфюмерного сырья: каталоги безспиртовых баз для body mist, сравнительные таблицы силиконовых и углеводородных носителей, инструкция по самостоятельному поиску поставщиков. Данные верифицируются по INCI и сертификатам.</p>
-      </div>
-    </section>
+          <a class="card" href="#docs-automation">
+            <div class="card__icon card__icon--amber" aria-hidden="true">XML</div>
+            <div class="card__title">Автоматизация учётных документов</div>
+            <p class="card__desc">Акты МХ-1 и УПД заполнялись вручную из разных источников. Скрипты собирают данные из XML, Excel и МойСклад и подставляют коды маркировки автоматически.</p>
+            <span class="card__link">Подробнее →</span>
+          </a>
 
-    <section class="cta" id="contact">
-      <h2 class="cta__title">Есть задача — напишите</h2>
-      <p class="cta__text">Расскажите, что отнимает время у вашей команды. Посмотрим, можно ли это автоматизировать.</p>
-      <div class="cta__actions">
-        <a class="btn btn--primary" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Telegram @Basifilder</a>
-        <a class="btn btn--ghost" href="tel:+79522453031">8 952 245-30-31</a>
-      </div>
-    </section>
+          <a class="card" href="#procurement">
+            <div class="card__icon card__icon--violet" aria-hidden="true">ERP</div>
+            <div class="card__title">Планирование закупок материалов</div>
+            <p class="card__desc">Заказ упаковки и сырья сводился вручную — без единой картины цен и остатков. Инструмент тянет данные из МойСклад и строит таблицу потребности с актуальными ценами.</p>
+            <span class="card__link">Подробнее →</span>
+          </a>
+
+          <a class="card" href="#raw-materials">
+            <div class="card__icon card__icon--blue" aria-hidden="true">R&amp;D</div>
+            <div class="card__title">Каталоги и аналитика сырья</div>
+            <p class="card__desc">Сравнение поставщиков бесспиртовых баз для парфюмерии занимало недели. Структурированные каталоги с верификацией состава, MOQ и цен по регионам.</p>
+            <span class="card__link">Подробнее →</span>
+          </a>
+
+          <div class="card card--static" id="production-analytics">
+            <div class="card__icon card__icon--green" aria-hidden="true">BI</div>
+            <div class="card__title">Производственная аналитика</div>
+            <p class="card__desc">Нормы выработки, себестоимость по линиям и премии считались вручную. Внутренний инструмент: аналитика остатков и продаж, планирование выпуска, автоматический расчёт премий по выработке.</p>
+            <span class="card__tag">Внутренний инструмент</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="details-title">
+        <div class="section__heading">
+          <div>
+            <span class="section__eyebrow">Задача и решение</span>
+            <h2 class="section__title" id="details-title">Подробнее о проектах</h2>
+          </div>
+        </div>
+        <div class="details-grid">
+          <section class="project-detail anchor-target" id="doublemark">
+            <h3 class="section__title">DoubleMark</h3>
+            <div class="prose">
+              <p><strong>DoubleMark</strong> — сервис для дублирования кодов маркировки «Честный Знак». Проблема знакома любому производителю: код повредился на линии или потерялся в партии — восстановление превращается в отдельную операцию с риском ошибок.</p>
+              <p>Сейчас проект на стадии бета-тестирования. Ищу производителей, готовых протестировать и дать обратную связь.</p>
+            </div>
+          </section>
+
+          <section class="project-detail anchor-target" id="docs-automation">
+            <h3 class="section__title">Автоматизация учётных документов</h3>
+            <div class="prose">
+              <p>Набор скриптов для документооборота между производством и складским учётом: заполнение акта приёма-передачи МХ-1 из УПД, подстановка кодов номенклатуры МойСклад, вставка КИЗ из Excel в XML-файлы отгрузки.</p>
+              <p>Задача, которую раньше делали вручную по каждой партии, теперь выполняется за минуты.</p>
+            </div>
+          </section>
+
+          <section class="project-detail anchor-target" id="procurement">
+            <h3 class="section__title">Планирование закупок</h3>
+            <div class="prose">
+              <p>Интеграция с МойСклад: подтягивает позиции из заказов поставщику, сопоставляет с номенклатурой и формирует таблицу материалов с актуальными ценами и расчётом потребности. Используется для планирования закупок упаковки и комплектующих.</p>
+            </div>
+          </section>
+
+          <section class="project-detail anchor-target" id="raw-materials">
+            <h3 class="section__title">Каталоги сырья</h3>
+            <div class="prose">
+              <p>Исследовательские инструменты для закупки парфюмерного сырья: каталоги бесспиртовых баз для body mist, сравнительные таблицы силиконовых и углеводородных носителей, инструкция по самостоятельному поиску поставщиков. Данные верифицируются по INCI и сертификатам.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="section anchor-target" id="stack">
+        <div class="section__heading">
+          <div>
+            <span class="section__eyebrow">Технологии</span>
+            <h2 class="section__title">Стек и инфраструктура</h2>
+          </div>
+        </div>
+        <p class="stack__summary">Python и .NET · React и TypeScript · PostgreSQL, SQLite, Redis · Telegram, МойСклад, Google Sheets, CRPT · Docker, nginx, VPS, CI/CD</p>
+        <details class="stack-details">
+          <summary>Чем работаю на проектах</summary>
+          <dl class="stack-details__body">
+            <div class="stack-group">
+              <dt>Языки</dt>
+              <dd>Python 3.11–3.12 · C# / .NET 8</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Backend и боты</dt>
+              <dd>aiogram 3 · aiohttp · FastAPI · APScheduler · SQLAlchemy 2 (async) · Alembic · ARQ · Pydantic · ASP.NET Core 8 · EF Core 8 · Telegram.Bot</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Frontend и десктоп</dt>
+              <dd>React 19 · Vite · TypeScript · Blazor (Razor Components) · WPF · ZXing.Net</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Базы данных</dt>
+              <dd>SQLite · PostgreSQL 16 · Redis 7</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Инфраструктура</dt>
+              <dd>VPS (Ubuntu) · systemd · Docker Compose · nginx · TLS · health-check · резервное копирование данных</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Интеграции</dt>
+              <dd>Telegram Bot API · МойСклад API · Google Sheets API · API Национального каталога (CRPT / GIS MT) · REST API</dd>
+            </div>
+            <div class="stack-group">
+              <dt>Качество и поставка</dt>
+              <dd>pytest · xunit · GitHub Actions · git · поэтапный деплой</dd>
+            </div>
+          </dl>
+        </details>
+      </section>
+
+      <section class="cta" id="contact">
+        <h2 class="cta__title">Есть задача — напишите</h2>
+        <p class="cta__text">Расскажите, что отнимает время у вашей команды. Посмотрим, можно ли это автоматизировать.</p>
+        <div class="cta__actions">
+          <a class="btn btn--primary" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Telegram @Basifilder</a>
+          <a class="btn btn--ghost" href="tel:+79522453031">8 952 245-30-31</a>
+        </div>
+      </section>
+    </main>
 
     <footer class="contacts">
       <div class="contacts__line">
-        <a href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Telegram</a>
+        <a href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Telegram @Basifilder</a>
         <span class="contacts__sep" aria-hidden="true">·</span>
         <a href="tel:+79522453031">8 952 245-30-31</a>
         <span class="contacts__sep" aria-hidden="true">·</span>
-        <a href="https://github.com/smokbasi" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="mailto:smokbasi@gmail.com">smokbasi@gmail.com</a>
         <span class="contacts__sep" aria-hidden="true">·</span>
-        <a href="mailto:your@email.ru">your@email.ru</a>
+        <a href="https://github.com/smokbasi" target="_blank" rel="noopener noreferrer">GitHub smokbasi</a>
       </div>
       <p class="footer-note">© <span id="year"></span> Никита Милашевич</p>
     </footer>
