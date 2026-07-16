@@ -102,3 +102,12 @@ test("primary buttons meet WCAG AA contrast in default and hover states", () => 
   assert.ok(contrastRatio(accent, foreground) >= 4.5);
   assert.ok(contrastRatio(accentHover, foreground) >= 4.5);
 });
+
+test("burst hero is brighter while retaining a protected text zone", () => {
+  const canvasBlock = css.match(/\.hero-burst__canvas\s*\{([^}]+)\}/)?.[1] ?? "";
+  const overlayBlock = css.match(/\.hero-burst__stage::after\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(canvasBlock, /filter:\s*brightness\(1\.16\)\s+saturate\(1\.12\)/);
+  assert.match(overlayBlock, /rgba\(15, 17, 23, 0\.88\)/);
+  assert.match(overlayBlock, /rgba\(15, 17, 23, 0\.68\)/);
+});

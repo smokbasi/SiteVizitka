@@ -50,8 +50,8 @@ a { color: inherit; }
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(circle at 50% 48%, rgba(15, 17, 23, 0.94) 0, rgba(15, 17, 23, 0.79) 24%, rgba(15, 17, 23, 0.2) 58%, transparent 76%),
-    linear-gradient(180deg, rgba(15, 17, 23, 0.28), transparent 28%, transparent 70%, rgba(15, 17, 23, 0.7));
+    radial-gradient(circle at 50% 48%, rgba(15, 17, 23, 0.88) 0, rgba(15, 17, 23, 0.68) 24%, rgba(15, 17, 23, 0.14) 58%, transparent 76%),
+    linear-gradient(180deg, rgba(15, 17, 23, 0.2), transparent 28%, transparent 70%, rgba(15, 17, 23, 0.58));
   content: "";
   pointer-events: none;
 }
@@ -60,6 +60,7 @@ a { color: inherit; }
   width: 100%;
   height: 100%;
   cursor: default;
+  filter: brightness(1.16) saturate(1.12);
   pointer-events: none;
 }
 .hero-burst__content {
