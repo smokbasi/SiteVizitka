@@ -244,20 +244,117 @@
       color: var(--muted);
     }
     .anchor-target { scroll-margin-top: 1.5rem; }
+
+    /* ── Burst hero ── */
+    .hero-burst {
+      position: relative;
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .hero-burst__stage {
+      position: relative;
+      width: 100%;
+      height: clamp(280px, 42vw, 420px);
+    }
+    .hero-burst__canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .hero-burst__content {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+      text-align: center;
+      pointer-events: none;
+      margin-bottom: 0;
+    }
+    .hero-burst__content .hero__actions {
+      pointer-events: auto;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    @media (min-width: 580px) {
+      .stats { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stats__item {
+      padding: 1.35rem 1rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    @media (min-width: 580px) {
+      .stats__item { border-bottom: none; }
+    }
+    .stats__item:nth-child(2n) { border-right: none; }
+    @media (min-width: 580px) {
+      .stats__item { border-right: 1px solid var(--border); }
+      .stats__item:last-child { border-right: none; }
+    }
+    .stats__value {
+      font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 0.2rem;
+    }
+    .stats__label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="hero" id="top">
-      <div class="hero__badge"><span class="hero__dot" aria-hidden="true"></span> Портфолио</div>
-      <h1 class="hero__name">Никита Милашевич</h1>
-      <p class="hero__role">Разработчик</p>
-      <p class="hero__tagline">Пишу инструменты там, где бизнес теряет время на ручную работу</p>
-      <div class="hero__actions">
-        <a class="btn btn--primary" href="#projects">Смотреть проекты</a>
-        <a class="btn btn--ghost" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
+    <section class="hero-burst" id="top" aria-label="Главный экран">
+      <div class="hero-burst__stage">
+        <canvas class="hero-burst__canvas" id="burst-canvas" aria-hidden="true"></canvas>
+        <header class="hero hero-burst__content">
+        <div class="hero__badge"><span class="hero__dot" aria-hidden="true"></span> Портфолио</div>
+        <h1 class="hero__name">Никита Милашевич</h1>
+        <p class="hero__role">Разработчик</p>
+        <p class="hero__tagline">Пишу инструменты там, где бизнес теряет время на ручную работу</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#projects">Смотреть проекты</a>
+          <a class="btn btn--ghost" href="https://t.me/Basifilder" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
+        </div>
+        </header>
       </div>
-    </header>
+      <div class="stats" aria-label="Ключевые показатели">
+        <div class="stats__item">
+          <div class="stats__value">4.5+</div>
+          <div class="stats__label">лет в производстве</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__value">3+</div>
+          <div class="stats__label">года разработки</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__value">6</div>
+          <div class="stats__label">проектов в портфолио</div>
+        </div>
+        <div class="stats__item">
+          <div class="stats__value">ERP</div>
+          <div class="stats__label">интеграции с МойСклад</div>
+        </div>
+      </div>
+    </section>
 
     <section class="section" id="about">
       <h2 class="section__title">Обо мне</h2>
@@ -368,6 +465,28 @@
     </footer>
   </div>
 
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="/js/burst-network.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    (function initBurst() {
+      var canvas = document.getElementById('burst-canvas');
+      if (!canvas || typeof BurstNetwork === 'undefined') return;
+
+      new BurstNetwork(canvas, {
+        lineCount: 240,
+        lineWidth: 1.25,
+        lineColor: 'rgba(91, 141, 239, 0.48)',
+        nodeColor: 'rgba(120, 160, 255, 0.75)',
+        nodeRadius: 3,
+        gradientInner: 'rgba(91, 141, 239, 0.22)',
+        gradientOuter: 'rgba(15, 17, 23, 0)',
+        originYOffset: 0.02,
+        interactionRadius: 180,
+        interactionStrength: 0.42,
+        nodeRatio: 0.55,
+      }).start();
+    })();
+  </script>
 </body>
 </html>
