@@ -58,9 +58,6 @@
     ambientLayerAmplitude: 0.82,
     ambientLayerLerp: 0.038,
     ambientPromoteBlend: 0.9,
-    midNodeMaxPerLine: 1,
-    midNodeMinT: 0.15,
-    midNodeMaxT: 0.45,
     neighborRepulsionRadius: 44,
     neighborRepulsionStrength: 0.075,
     layerRepulsionScale: [1.0, 0.52, 0.22],
@@ -129,16 +126,6 @@
     return stops;
   }
 
-  function countMidNodes(lengthFactor, minLen, maxLen, maxPerLine) {
-    var span = maxLen - minLen || 1;
-    var shortness = 1 - (lengthFactor - minLen) / span;
-    var roll = Math.random();
-    if (shortness > 0.55 && roll < 0.57) return maxPerLine;
-    if (shortness > 0.28 && roll < 0.41) return 1;
-    if (roll < 0.15) return 1;
-    return 0;
-  }
-
   function BurstNetwork(canvas, options) {
     if (!canvas || !canvas.getContext) {
       throw new Error('BurstNetwork requires a canvas element');
@@ -181,18 +168,6 @@
     this._handleResize();
   }
 
-  BurstNetwork.prototype._makeMidNode = function (t) {
-    return { t: t };
-  };
-
-  BurstNetwork.prototype._midPointOnLine = function (line, mid) {
-    var origin = this.origin;
-    return {
-      x: origin.x + (line.x - origin.x) * mid.t,
-      y: origin.y + (line.y - origin.y) * mid.t,
-    };
-  };
-
   BurstNetwork.prototype._buildLines = function () {
     var opts = this.opts;
     var count = opts.lineCount;
@@ -207,27 +182,12 @@
       var lengthFactor = rand(minLen, maxLen);
       var defaultLayer = pickLayer(weights);
       var hasNode = Math.random() < opts.nodeRatio;
-      var midCount = countMidNodes(lengthFactor, minLen, maxLen, opts.midNodeMaxPerLine);
-      var midNodes = [];
-      var usedT = [];
-
-      for (var m = 0; m < midCount; m++) {
-        var mt;
-        var attempts = 0;
-        do {
-          mt = rand(opts.midNodeMinT, opts.midNodeMaxT);
-          attempts++;
-        } while (attempts < 8 && usedT.some(function (u) { return Math.abs(u - mt) < 0.08; }));
-        usedT.push(mt);
-        midNodes.push(this._makeMidNode(mt));
-      }
 
       this.lines.push({
         id: i,
         angle: angle,
         lengthFactor: lengthFactor,
         hasNode: hasNode,
-        midNodes: midNodes,
         defaultLayer: defaultLayer,
         visualLayer: defaultLayer,
         ambientPhase: rand(0, TAU),
@@ -501,14 +461,8 @@
     var nodeAlpha = style.nodeOpacity;
     var ir = line.iridescence;
     var phase = this.iridescencePhase;
-    var mids = line.midNodes;
 
     this._strokeSegment(origin.x, origin.y, line.x, line.y, style, ir, phase, lineAlpha);
-
-    for (var m = 0; m < mids.length; m++) {
-      var midPt = this._midPointOnLine(line, mids[m]);
-      this._drawNode(midPt.x, midPt.y, style, ir, phase, nodeAlpha, 0.88);
-    }
 
     if (line.hasNode) {
       this._drawNode(line.x, line.y, style, ir, phase, nodeAlpha, 1);
