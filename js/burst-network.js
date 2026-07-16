@@ -24,9 +24,13 @@
     originYOffset: 0.02,
     gradientInner: 'rgba(91, 141, 239, 0.14)',
     gradientOuter: 'rgba(15, 17, 23, 0)',
-    interactionRadius: 240,
-    interactionStrength: 0.48,
-    spring: 0.045,
+    interactionRadius: 360,
+    interactionStrength: 0.58,
+    spring: 0.04,
+    springRadial: null,
+    springRadialInward: 0.015,
+    springTangential: 0.016,
+    yRepulsionBoost: 2.0,
     damping: 0.82,
     mouseSmoothing: 0.12,
   };
@@ -122,6 +126,25 @@
     };
   };
 
+  BurstNetwork.prototype._applySpring = function (line, rest) {
+    var opts = this.opts;
+    var origin = this.origin;
+    var springRadial = opts.springRadial != null ? opts.springRadial : opts.spring;
+    var sdx = rest.x - line.x;
+    var sdy = rest.y - line.y;
+    var orx = rest.x - origin.x;
+    var ory = rest.y - origin.y;
+    var orLen = Math.sqrt(orx * orx + ory * ory) || 1;
+    var ux = orx / orLen;
+    var uy = ory / orLen;
+    var radialDisp = sdx * ux + sdy * uy;
+    var radialK = radialDisp < 0 ? opts.springRadialInward : springRadial;
+    var tanDx = sdx - ux * radialDisp;
+    var tanDy = sdy - uy * radialDisp;
+    line.vx += ux * radialDisp * radialK + tanDx * opts.springTangential;
+    line.vy += uy * radialDisp * radialK + tanDy * opts.springTangential;
+  };
+
   BurstNetwork.prototype._handleMove = function (event) {
     var rect = this.canvas.getBoundingClientRect();
     this.mouse.x = event.clientX - rect.left;
@@ -165,12 +188,11 @@
         if (dist < opts.interactionRadius) {
           var push = (1 - dist / opts.interactionRadius) * opts.interactionStrength;
           line.vx += (dx / dist) * push;
-          line.vy += (dy / dist) * push;
+          line.vy += (dy / dist) * push * opts.yRepulsionBoost;
         }
       }
 
-      line.vx += (rest.x - line.x) * opts.spring;
-      line.vy += (rest.y - line.y) * opts.spring;
+      this._applySpring(line, rest);
       line.vx *= opts.damping;
       line.vy *= opts.damping;
       line.x += line.vx;
