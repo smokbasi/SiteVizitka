@@ -24,8 +24,8 @@
     originYOffset: 0.02,
     gradientInner: 'rgba(91, 141, 239, 0.14)',
     gradientOuter: 'rgba(15, 17, 23, 0)',
-    interactionRadius: 140,
-    interactionStrength: 0.35,
+    interactionRadius: 240,
+    interactionStrength: 0.48,
     spring: 0.045,
     damping: 0.82,
     mouseSmoothing: 0.12,
@@ -159,13 +159,13 @@
       var rest = this._restPoint(line);
 
       if (interact) {
-        var dx = mx - line.x;
-        var dy = my - line.y;
+        var dx = line.x - mx;
+        var dy = line.y - my;
         var dist = Math.sqrt(dx * dx + dy * dy) || 1;
         if (dist < opts.interactionRadius) {
-          var pull = (1 - dist / opts.interactionRadius) * opts.interactionStrength;
-          line.vx += (dx / dist) * pull;
-          line.vy += (dy / dist) * pull;
+          var push = (1 - dist / opts.interactionRadius) * opts.interactionStrength;
+          line.vx += (dx / dist) * push;
+          line.vy += (dy / dist) * push;
         }
       }
 
