@@ -423,8 +423,9 @@
     ctx.lineCap = 'round';
 
     if (ir > 0.02) {
+      var irAlpha = lineAlpha * (0.48 + ir * 0.62);
       var grad = ctx.createLinearGradient(x0, y0, x1, y1);
-      var stops = iridescentStops(phase, lineAlpha, ir);
+      var stops = iridescentStops(phase, irAlpha, ir);
       for (var s = 0; s < stops.length; s++) {
         grad.addColorStop(stops[s].t, stops[s].color);
       }
@@ -444,8 +445,13 @@
     var opts = this.opts;
     var nodeR = opts.nodeRadius * style.nodeRadiusMul * (nodeScale || 1);
     if (ir > 0.02) {
-      var nh = (phase * 95 + x * 0.07 + y * 0.05) % 360;
-      ctx.fillStyle = hsla(nh, 62, 58, nodeAlpha * (0.55 + ir * 0.45));
+      var irAlpha = nodeAlpha * (0.55 + ir * 0.45);
+      var grad = ctx.createRadialGradient(x, y, 0, x, y, nodeR);
+      var stops = iridescentStops(phase + x * 0.002 + y * 0.0015, irAlpha, ir);
+      for (var s = 0; s < stops.length; s++) {
+        grad.addColorStop(stops[s].t, stops[s].color);
+      }
+      ctx.fillStyle = grad;
     } else {
       ctx.fillStyle = rgba(ACCENT.r, ACCENT.g, ACCENT.b, nodeAlpha);
     }
@@ -454,26 +460,34 @@
     ctx.fill();
   };
 
-  BurstNetwork.prototype._drawLine = function (line) {
+  BurstNetwork.prototype._drawLineStroke = function (line) {
     var origin = this.origin;
     var style = styleForLayer(line.visualLayer);
-    var lineAlpha = style.lineOpacity;
-    var nodeAlpha = style.nodeOpacity;
+    var ir = line.iridescence;
+    this._strokeSegment(origin.x, origin.y, line.x, line.y, style, ir, this.iridescencePhase, style.lineOpacity);
+  };
+
+  BurstNetwork.prototype._drawLineNodes = function (line) {
+    var style = styleForLayer(line.visualLayer);
     var ir = line.iridescence;
     var phase = this.iridescencePhase;
-
-    this._strokeSegment(origin.x, origin.y, line.x, line.y, style, ir, phase, lineAlpha);
-
+    var nodeAlpha = style.nodeOpacity;
     if (line.hasNode) {
       this._drawNode(line.x, line.y, style, ir, phase, nodeAlpha, 1);
     }
   };
 
-  BurstNetwork.prototype._drawClusterDot = function (dot) {
+  BurstNetwork.prototype._drawClusterDotStroke = function (dot) {
+    var origin = this.origin;
     var style = styleForLayer(dot.visualLayer);
     var ir = dot.iridescence;
-    var phase = this.iridescencePhase;
-    this._drawNode(dot.x, dot.y, style, ir, phase, style.nodeOpacity, 0.78);
+    this._strokeSegment(origin.x, origin.y, dot.x, dot.y, style, ir, this.iridescencePhase, style.lineOpacity * 0.88);
+  };
+
+  BurstNetwork.prototype._drawClusterDotNode = function (dot) {
+    var style = styleForLayer(dot.visualLayer);
+    var ir = dot.iridescence;
+    this._drawNode(dot.x, dot.y, style, ir, this.iridescencePhase, style.nodeOpacity, 0.78);
   };
 
   BurstNetwork.prototype._gatherSimPoints = function () {
@@ -597,17 +611,25 @@
     ctx.clearRect(0, 0, this.width, this.height);
     this._drawBackground();
 
+    this._rebuildDrawOrder();
+    var order = this._drawOrder;
+    for (i = 0; i < order.length; i++) {
+      this._drawLineStroke(this.lines[order[i]]);
+    }
+
     var cluster = this.clusterDots.slice().sort(function (a, b) {
       return b.visualLayer - a.visualLayer;
     });
     for (i = 0; i < cluster.length; i++) {
-      this._drawClusterDot(cluster[i]);
+      this._drawClusterDotStroke(cluster[i]);
     }
 
-    this._rebuildDrawOrder();
-    var order = this._drawOrder;
+    for (i = 0; i < cluster.length; i++) {
+      this._drawClusterDotNode(cluster[i]);
+    }
+
     for (i = 0; i < order.length; i++) {
-      this._drawLine(this.lines[order[i]]);
+      this._drawLineNodes(this.lines[order[i]]);
     }
   };
 
