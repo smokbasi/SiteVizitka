@@ -134,6 +134,9 @@
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.opts = Object.assign({}, DEFAULTS, options || {});
+    this.interactionTarget = this._resolveInteractionTarget(
+      options && options.interactionTarget
+    );
     if (options && options.chaseHitRadius != null && options.promoteHitRadius == null) {
       this.opts.promoteHitRadius = options.chaseHitRadius;
     }
@@ -160,6 +163,7 @@
 
     this._onResize = this._handleResize.bind(this);
     this._onMove = this._handleMove.bind(this);
+    this._onEnter = this._handleEnter.bind(this);
     this._onLeave = this._handleLeave.bind(this);
     this._onFrame = this._frame.bind(this);
 
@@ -227,6 +231,32 @@
         vy: 0,
       });
     }
+  };
+
+  BurstNetwork.prototype._resolveInteractionTarget = function (explicit) {
+    if (explicit && explicit.addEventListener) return explicit;
+    if (this.canvas.closest) {
+      var stage = this.canvas.closest('.hero-burst__stage');
+      if (stage) return stage;
+    }
+    return (this.canvas.parentElement && this.canvas.parentElement !== this.canvas)
+      ? this.canvas.parentElement
+      : this.canvas;
+  };
+
+  BurstNetwork.prototype._clientToCanvas = function (clientX, clientY) {
+    var rect = this.canvas.getBoundingClientRect();
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  };
+
+  BurstNetwork.prototype._setMouseFromClient = function (clientX, clientY) {
+    var pos = this._clientToCanvas(clientX, clientY);
+    this.mouse.x = pos.x;
+    this.mouse.y = pos.y;
+    this.mouse.active = true;
   };
 
   BurstNetwork.prototype._handleResize = function () {
@@ -324,10 +354,11 @@
   };
 
   BurstNetwork.prototype._handleMove = function (event) {
-    var rect = this.canvas.getBoundingClientRect();
-    this.mouse.x = event.clientX - rect.left;
-    this.mouse.y = event.clientY - rect.top;
-    this.mouse.active = true;
+    this._setMouseFromClient(event.clientX, event.clientY);
+  };
+
+  BurstNetwork.prototype._handleEnter = function (event) {
+    this._setMouseFromClient(event.clientX, event.clientY);
   };
 
   BurstNetwork.prototype._handleLeave = function () {
@@ -654,8 +685,10 @@
 
     this.running = true;
     this.lastFrame = 0;
-    this.canvas.addEventListener('pointermove', this._onMove, { passive: true });
-    this.canvas.addEventListener('pointerleave', this._onLeave);
+    var target = this.interactionTarget;
+    target.addEventListener('pointerenter', this._onEnter, { passive: true });
+    target.addEventListener('pointermove', this._onMove, { passive: true });
+    target.addEventListener('pointerleave', this._onLeave);
     global.addEventListener('resize', this._onResize);
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -672,8 +705,10 @@
   BurstNetwork.prototype.stop = function () {
     this.running = false;
     global.cancelAnimationFrame(this.rafId);
-    this.canvas.removeEventListener('pointermove', this._onMove);
-    this.canvas.removeEventListener('pointerleave', this._onLeave);
+    var target = this.interactionTarget;
+    target.removeEventListener('pointerenter', this._onEnter);
+    target.removeEventListener('pointermove', this._onMove);
+    target.removeEventListener('pointerleave', this._onLeave);
     global.removeEventListener('resize', this._onResize);
     if (this._ro) {
       this._ro.disconnect();

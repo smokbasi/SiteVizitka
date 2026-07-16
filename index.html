@@ -258,13 +258,14 @@
       position: relative;
       width: 100%;
       height: clamp(280px, 42vw, 420px);
+      touch-action: none;
     }
     .hero-burst__canvas {
       display: block;
       width: 100%;
       height: 100%;
       cursor: default;
-      touch-action: none;
+      pointer-events: none;
     }
     .hero-burst__content {
       position: absolute;
@@ -279,7 +280,8 @@
       pointer-events: none;
       margin-bottom: 0;
     }
-    .hero-burst__content .hero__actions {
+    .hero-burst__content .hero__actions,
+    .hero-burst__content .hero__actions a {
       pointer-events: auto;
     }
     .stats {
@@ -471,9 +473,11 @@
 
     (function initBurst() {
       var canvas = document.getElementById('burst-canvas');
-      if (!canvas || typeof BurstNetwork === 'undefined') return;
+      var stage = canvas && canvas.closest('.hero-burst__stage');
+      if (!canvas || !stage || typeof BurstNetwork === 'undefined') return;
 
       new BurstNetwork(canvas, {
+        interactionTarget: stage,
         lineCount: 240,
         lineWidth: 1.25,
         lineColor: 'rgba(91, 141, 239, 0.48)',
