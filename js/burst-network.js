@@ -45,8 +45,9 @@
     promoteDwellMs: 520,
     promoteLerp: 0.11,
     promoteDecay: 0.045,
-    chaseHitRadius: null,
-    iridescenceStartMs: 950,
+    promoteHitRadius: null,
+    iridescenceHitRadius: null,
+    iridescenceStartMs: 475,
     iridescencePhaseSpeed: 0.0028,
   };
 
@@ -119,8 +120,14 @@
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.opts = Object.assign({}, DEFAULTS, options || {});
-    if (this.opts.chaseHitRadius == null) {
-      this.opts.chaseHitRadius = this.opts.interactionRadius * 0.78;
+    if (options && options.chaseHitRadius != null && options.promoteHitRadius == null) {
+      this.opts.promoteHitRadius = options.chaseHitRadius;
+    }
+    if (this.opts.promoteHitRadius == null) {
+      this.opts.promoteHitRadius = this.opts.interactionRadius * 0.25;
+    }
+    if (this.opts.iridescenceHitRadius == null) {
+      this.opts.iridescenceHitRadius = this.opts.promoteHitRadius * 0.6;
     }
     this.lines = [];
     this.running = false;
@@ -133,8 +140,6 @@
     this.reducedMotion = global.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.lastFrame = 0;
     this.iridescencePhase = 0;
-    this.focusedLineId = -1;
-    this.chaseDuration = 0;
     this._drawOrder = [];
 
     this._onResize = this._handleResize.bind(this);
@@ -168,6 +173,7 @@
         defaultLayer: defaultLayer,
         visualLayer: defaultLayer,
         dwellTime: 0,
+        iridescenceDwellTime: 0,
         iridescence: 0,
         x: 0,
         y: 0,
@@ -243,45 +249,20 @@
     var opts = this.opts;
     var mx = this.mouse.sx;
     var my = this.mouse.sy;
-    var hitR = opts.chaseHitRadius;
-    var hitR2 = hitR * hitR;
+    var promoteR2 = opts.promoteHitRadius * opts.promoteHitRadius;
+    var irR2 = opts.iridescenceHitRadius * opts.iridescenceHitRadius;
     var interact = this.mouse.active;
     var lines = this.lines;
-    var closestId = -1;
-    var closestDist2 = hitR2;
-
-    if (interact) {
-      for (var c = 0; c < lines.length; c++) {
-        var lc = lines[c];
-        var cdx = lc.x - mx;
-        var cdy = lc.y - my;
-        var cd2 = cdx * cdx + cdy * cdy;
-        if (cd2 < closestDist2) {
-          closestDist2 = cd2;
-          closestId = lc.id;
-        }
-      }
-    }
-
-    if (closestId !== this.focusedLineId) {
-      this.focusedLineId = closestId;
-      this.chaseDuration = 0;
-    } else if (closestId >= 0) {
-      this.chaseDuration += dt;
-    } else {
-      this.chaseDuration = 0;
-    }
-
-    var chaseReady = this.chaseDuration >= opts.iridescenceStartMs;
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
       var dx = line.x - mx;
       var dy = line.y - my;
       var dist2 = dx * dx + dy * dy;
-      var near = interact && dist2 < hitR2;
+      var nearPromote = interact && dist2 < promoteR2;
+      var nearIridescent = interact && dist2 < irR2;
 
-      if (near) {
+      if (nearPromote) {
         line.dwellTime += dt;
         if (line.dwellTime >= opts.promoteDwellMs && line.defaultLayer > 0) {
           line.visualLayer = lerp(line.visualLayer, 0, opts.promoteLerp);
@@ -291,11 +272,15 @@
         line.visualLayer = lerp(line.visualLayer, line.defaultLayer, opts.promoteDecay);
       }
 
+      if (nearIridescent) {
+        line.iridescenceDwellTime += dt;
+      } else {
+        line.iridescenceDwellTime = Math.max(0, line.iridescenceDwellTime - dt * 1.8);
+      }
+
       var irTarget = 0;
-      if (interact && line.id === closestId && chaseReady && !this.reducedMotion) {
-        irTarget = 1;
-      } else if (interact && line.id === closestId && chaseReady && this.reducedMotion) {
-        irTarget = 0.35;
+      if (nearIridescent && line.iridescenceDwellTime >= opts.iridescenceStartMs) {
+        irTarget = this.reducedMotion ? 0.35 : 1;
       }
       var irSpeed = irTarget > line.iridescence ? 0.055 : 0.07;
       line.iridescence = lerp(line.iridescence, irTarget, irSpeed);
