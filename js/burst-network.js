@@ -1,6 +1,6 @@
 /**
  * BurstNetwork — Stripe-style radiating line visualization.
- * Canvas-based, mouse-interactive physics simulation.
+ * Canvas-based, mouse-interactive physics with depth layers + chase iridescence.
  *
  * @example
  * const burst = new BurstNetwork(document.getElementById('burst'), {
@@ -12,11 +12,19 @@
 (function (global) {
   'use strict';
 
+  var ACCENT = { r: 91, g: 141, b: 239 };
+
+  var LAYER_STYLES = [
+    { lineOpacity: 0.52, lineWidthMul: 1.28, nodeOpacity: 0.82, nodeRadiusMul: 1.0 },
+    { lineOpacity: 0.30, lineWidthMul: 1.0, nodeOpacity: 0.50, nodeRadiusMul: 0.74 },
+    { lineOpacity: 0.15, lineWidthMul: 0.72, nodeOpacity: 0.24, nodeRadiusMul: 0.52 },
+  ];
+
   var DEFAULTS = {
     lineCount: 200,
     minLength: 0.35,
     maxLength: 0.95,
-    nodeRatio: 0.55,
+    nodeRatio: 1.0,
     lineWidth: 1,
     lineColor: 'rgba(91, 141, 239, 0.35)',
     nodeColor: 'rgba(91, 141, 239, 0.65)',
@@ -33,6 +41,13 @@
     yRepulsionBoost: 2.2,
     damping: 0.88,
     mouseSmoothing: 0.26,
+    layerWeights: [0.22, 0.33, 0.45],
+    promoteDwellMs: 520,
+    promoteLerp: 0.11,
+    promoteDecay: 0.045,
+    chaseHitRadius: null,
+    iridescenceStartMs: 950,
+    iridescencePhaseSpeed: 0.0028,
   };
 
   function rand(min, max) {
@@ -43,6 +58,59 @@
     return a + (b - a) * t;
   }
 
+  function clamp(v, lo, hi) {
+    return v < lo ? lo : v > hi ? hi : v;
+  }
+
+  function rgba(r, g, b, a) {
+    return 'rgba(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ',' + a + ')';
+  }
+
+  function hsla(h, s, l, a) {
+    return 'hsla(' + h + ',' + s + '%,' + l + '%,' + a + ')';
+  }
+
+  function pickLayer(weights) {
+    var r = Math.random();
+    var acc = 0;
+    for (var i = 0; i < weights.length; i++) {
+      acc += weights[i];
+      if (r < acc) return i;
+    }
+    return weights.length - 1;
+  }
+
+  function styleForLayer(visualLayer) {
+    var t = clamp(visualLayer, 0, 2);
+    var i0 = Math.floor(t);
+    var i1 = Math.min(2, i0 + 1);
+    var f = t - i0;
+    var a = LAYER_STYLES[i0];
+    var b = LAYER_STYLES[i1];
+    return {
+      lineOpacity: lerp(a.lineOpacity, b.lineOpacity, f),
+      lineWidthMul: lerp(a.lineWidthMul, b.lineWidthMul, f),
+      nodeOpacity: lerp(a.nodeOpacity, b.nodeOpacity, f),
+      nodeRadiusMul: lerp(a.nodeRadiusMul, b.nodeRadiusMul, f),
+    };
+  }
+
+  function iridescentStops(phase, alpha, irBlend) {
+    var stops = [];
+    for (var s = 0; s <= 4; s++) {
+      var t = s / 4;
+      if (irBlend > 0.01) {
+        var hue = (t * 140 + phase * 72 + Math.sin(t * 6.28 + phase) * 18) % 360;
+        var sat = lerp(48, 58 + Math.sin(t * 5 + phase * 1.4) * 22, irBlend);
+        var lit = lerp(58, 52 + Math.cos(t * 4 + phase * 0.9) * 14, irBlend);
+        stops.push({ t: t, color: hsla(hue, sat, lit, alpha) });
+      } else {
+        stops.push({ t: t, color: rgba(ACCENT.r, ACCENT.g, ACCENT.b, alpha) });
+      }
+    }
+    return stops;
+  }
+
   function BurstNetwork(canvas, options) {
     if (!canvas || !canvas.getContext) {
       throw new Error('BurstNetwork requires a canvas element');
@@ -51,6 +119,9 @@
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.opts = Object.assign({}, DEFAULTS, options || {});
+    if (this.opts.chaseHitRadius == null) {
+      this.opts.chaseHitRadius = this.opts.interactionRadius * 0.78;
+    }
     this.lines = [];
     this.running = false;
     this.rafId = 0;
@@ -60,6 +131,11 @@
     this.origin = { x: 0, y: 0 };
     this.mouse = { x: 0, y: 0, active: false, sx: 0, sy: 0 };
     this.reducedMotion = global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.lastFrame = 0;
+    this.iridescencePhase = 0;
+    this.focusedLineId = -1;
+    this.chaseDuration = 0;
+    this._drawOrder = [];
 
     this._onResize = this._handleResize.bind(this);
     this._onMove = this._handleMove.bind(this);
@@ -74,18 +150,25 @@
     var count = this.opts.lineCount;
     var minLen = this.opts.minLength;
     var maxLen = this.opts.maxLength;
+    var weights = this.opts.layerWeights;
     this.lines = [];
 
     for (var i = 0; i < count; i++) {
       var t = count > 1 ? i / (count - 1) : 0.5;
       var angle = lerp(-Math.PI + 0.15, -0.15, t) + rand(-0.012, 0.012);
       var lengthFactor = rand(minLen, maxLen);
+      var defaultLayer = pickLayer(weights);
       var hasNode = Math.random() < this.opts.nodeRatio;
 
       this.lines.push({
+        id: i,
         angle: angle,
         lengthFactor: lengthFactor,
         hasNode: hasNode,
+        defaultLayer: defaultLayer,
+        visualLayer: defaultLayer,
+        dwellTime: 0,
+        iridescence: 0,
         x: 0,
         y: 0,
         vx: 0,
@@ -156,6 +239,79 @@
     this.mouse.active = false;
   };
 
+  BurstNetwork.prototype._updateLayerAndChase = function (dt) {
+    var opts = this.opts;
+    var mx = this.mouse.sx;
+    var my = this.mouse.sy;
+    var hitR = opts.chaseHitRadius;
+    var hitR2 = hitR * hitR;
+    var interact = this.mouse.active;
+    var lines = this.lines;
+    var closestId = -1;
+    var closestDist2 = hitR2;
+
+    if (interact) {
+      for (var c = 0; c < lines.length; c++) {
+        var lc = lines[c];
+        var cdx = lc.x - mx;
+        var cdy = lc.y - my;
+        var cd2 = cdx * cdx + cdy * cdy;
+        if (cd2 < closestDist2) {
+          closestDist2 = cd2;
+          closestId = lc.id;
+        }
+      }
+    }
+
+    if (closestId !== this.focusedLineId) {
+      this.focusedLineId = closestId;
+      this.chaseDuration = 0;
+    } else if (closestId >= 0) {
+      this.chaseDuration += dt;
+    } else {
+      this.chaseDuration = 0;
+    }
+
+    var chaseReady = this.chaseDuration >= opts.iridescenceStartMs;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var dx = line.x - mx;
+      var dy = line.y - my;
+      var dist2 = dx * dx + dy * dy;
+      var near = interact && dist2 < hitR2;
+
+      if (near) {
+        line.dwellTime += dt;
+        if (line.dwellTime >= opts.promoteDwellMs && line.defaultLayer > 0) {
+          line.visualLayer = lerp(line.visualLayer, 0, opts.promoteLerp);
+        }
+      } else {
+        line.dwellTime = Math.max(0, line.dwellTime - dt * 1.8);
+        line.visualLayer = lerp(line.visualLayer, line.defaultLayer, opts.promoteDecay);
+      }
+
+      var irTarget = 0;
+      if (interact && line.id === closestId && chaseReady && !this.reducedMotion) {
+        irTarget = 1;
+      } else if (interact && line.id === closestId && chaseReady && this.reducedMotion) {
+        irTarget = 0.35;
+      }
+      var irSpeed = irTarget > line.iridescence ? 0.055 : 0.07;
+      line.iridescence = lerp(line.iridescence, irTarget, irSpeed);
+    }
+  };
+
+  BurstNetwork.prototype._rebuildDrawOrder = function () {
+    var order = this._drawOrder;
+    var lines = this.lines;
+    order.length = lines.length;
+    for (var i = 0; i < lines.length; i++) order[i] = i;
+    order.sort(function (a, b) {
+      return lines[b].visualLayer - lines[a].visualLayer;
+    });
+  };
+
   BurstNetwork.prototype._drawBackground = function () {
     var ctx = this.ctx;
     var cx = this.width * 0.5;
@@ -170,9 +326,52 @@
     ctx.fillRect(0, 0, this.width, this.height);
   };
 
+  BurstNetwork.prototype._drawLine = function (line) {
+    var ctx = this.ctx;
+    var origin = this.origin;
+    var opts = this.opts;
+    var style = styleForLayer(line.visualLayer);
+    var lineAlpha = style.lineOpacity;
+    var lineW = opts.lineWidth * style.lineWidthMul;
+    var nodeR = opts.nodeRadius * style.nodeRadiusMul;
+    var nodeAlpha = style.nodeOpacity;
+    var ir = line.iridescence;
+    var phase = this.iridescencePhase;
+
+    ctx.lineWidth = lineW;
+    ctx.lineCap = 'round';
+
+    if (ir > 0.02) {
+      var grad = ctx.createLinearGradient(origin.x, origin.y, line.x, line.y);
+      var stops = iridescentStops(phase, lineAlpha, ir);
+      for (var s = 0; s < stops.length; s++) {
+        grad.addColorStop(stops[s].t, stops[s].color);
+      }
+      ctx.strokeStyle = grad;
+    } else {
+      ctx.strokeStyle = rgba(ACCENT.r, ACCENT.g, ACCENT.b, lineAlpha);
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(line.x, line.y);
+    ctx.stroke();
+
+    if (line.hasNode) {
+      if (ir > 0.02) {
+        var nh = (phase * 95 + line.id * 17) % 360;
+        ctx.fillStyle = hsla(nh, 62, 58, nodeAlpha * (0.55 + ir * 0.45));
+      } else {
+        ctx.fillStyle = rgba(ACCENT.r, ACCENT.g, ACCENT.b, nodeAlpha);
+      }
+      ctx.beginPath();
+      ctx.arc(line.x, line.y, nodeR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
   BurstNetwork.prototype._simulate = function () {
     var opts = this.opts;
-    var origin = this.origin;
     var mx = this.mouse.sx;
     var my = this.mouse.sy;
     var interact = !this.reducedMotion && this.mouse.active;
@@ -207,35 +406,28 @@
 
   BurstNetwork.prototype._draw = function () {
     var ctx = this.ctx;
-    var origin = this.origin;
-    var opts = this.opts;
 
     ctx.clearRect(0, 0, this.width, this.height);
     this._drawBackground();
+    this._rebuildDrawOrder();
 
-    ctx.lineWidth = opts.lineWidth;
-    ctx.strokeStyle = opts.lineColor;
-    ctx.fillStyle = opts.nodeColor;
-
-    ctx.beginPath();
-    for (var i = 0; i < this.lines.length; i++) {
-      var line = this.lines[i];
-      ctx.moveTo(origin.x, origin.y);
-      ctx.lineTo(line.x, line.y);
-    }
-    ctx.stroke();
-
-    for (var j = 0; j < this.lines.length; j++) {
-      var ln = this.lines[j];
-      if (!ln.hasNode) continue;
-      ctx.beginPath();
-      ctx.arc(ln.x, ln.y, opts.nodeRadius, 0, Math.PI * 2);
-      ctx.fill();
+    var order = this._drawOrder;
+    for (var i = 0; i < order.length; i++) {
+      this._drawLine(this.lines[order[i]]);
     }
   };
 
-  BurstNetwork.prototype._frame = function () {
+  BurstNetwork.prototype._frame = function (now) {
     if (!this.running) return;
+    if (!this.lastFrame) this.lastFrame = now;
+    var dt = Math.min(now - this.lastFrame, 48);
+    this.lastFrame = now;
+
+    if (!this.reducedMotion) {
+      this.iridescencePhase += dt * this.opts.iridescencePhaseSpeed;
+    }
+
+    this._updateLayerAndChase(dt);
     this._simulate();
     this._draw();
     this.rafId = global.requestAnimationFrame(this._onFrame);
@@ -245,6 +437,7 @@
     if (this.running) return this;
 
     this.running = true;
+    this.lastFrame = 0;
     this.canvas.addEventListener('pointermove', this._onMove, { passive: true });
     this.canvas.addEventListener('pointerleave', this._onLeave);
     global.addEventListener('resize', this._onResize);
